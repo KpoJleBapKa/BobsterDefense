@@ -1,0 +1,1042 @@
+# ═══════════════════════════════════════════════
+#   BobsterDefence — конфігурація
+# ═══════════════════════════════════════════════
+
+# Захист скринь від вибухів.
+# Блокує ТІЛЬКИ руйнування вибухом. Ламати руками/киркою можна як завжди.
+chest-protection:
+  enabled: true
+  chest: true
+  trapped-chest: true
+  # Додаткові типи блоків, які теж не мають руйнуватися вибухом.
+  # Приклад: [BARREL, SHULKER_BOX, ENDER_CHEST]
+  extra-blocks: []
+
+# Ручне ППО: перехоплення цілей стрілою з лука.
+air-defence:
+  enabled: true
+
+  intercept-tnt: true       # збивати активований TNT (TNTPrimed)
+  intercept-drones: true    # збивати ворожі FPV-дрони
+  intercept-missiles: true  # збивати балістичні ракети (складніше: треба кілька влучань)
+
+  # Які снаряди можуть збивати ціль
+  projectiles:
+    arrow: true            # звичайні + tipped (зіллєві) стріли
+    spectral-arrow: true   # spectral arrow
+    trident: false         # тризуб
+    # Все інше (сніжки, яйця, феєрверки, вогняні кулі) ніколи не збиває ціль.
+
+  # Прибирати стрілу після перехоплення
+  remove-arrow: true
+
+  # Скільки тіків залишити до вибуху TNT після влучання (мінімум 1)
+  instant-fuse-ticks: 1
+
+  # Шанс перехоплення у відсотках (100 = завжди)
+  chance-percent: 100
+
+  # Зараховувати перехоплення, якщо стріляв не гравець (скелет, роздавач)
+  count-non-player-shooters: false
+
+  effects:
+    particles: true
+    particle: ELECTRIC_SPARK   # напр. CRIT, ELECTRIC_SPARK, FLASH, EXPLOSION
+    particle-count: 30
+    particle-offset: 0.4
+    sound: true
+    sound-name: ENTITY_FIREWORK_ROCKET_BLAST
+    sound-volume: 1.0
+    sound-pitch: 1.4
+    actionbar: true
+
+# ═══════════════════════════════════════════════
+#   FPV-дрони
+# ═══════════════════════════════════════════════
+#
+# Як це працює технічно: на Paper 1.21.1 немає API для читання WASD/Space/Shift
+# (PlayerInputEvent з'явився пізніше), тому оператор на час польоту переводиться
+# в spectator — там ці клавіші працюють нативно, а миша задає напрямок.
+# Гравець фактично і є камерою дрона; сутності дрона щотік підтягуються за ним,
+# а зіткнення рахуються ray trace'ом між позиціями двох сусідніх тіків.
+fpv-drone:
+  enabled: true
+  recipes-enabled: true
+
+  explosion-fire: false
+  explosion-break-blocks: true
+
+  # Сила вибуху дрона, збитого в повітрі (ППО, стріла, таран).
+  # Не залежить від моделі: збитий дрон детонує повним боєкомплектом.
+  intercept-explosion-power: 4.0
+
+  explode-on:
+    blocks: true
+    players: true
+    entities: true
+
+  operator:
+    # Тіло оператора лишається на місці запуску і залишається вразливим.
+    # Якщо його вб'ють — дрон миттєво детонує.
+    can-take-damage: true
+
+  # На якій відстані спрацьовує таран чужого дрона. Окремо від зіткнення з блоками:
+  # hitbox дрона — маленька невидима стійка, і влучити в неї променем на льоту нереально.
+  ram-radius: 2.0
+
+  # Розмір моделі дрона (1.0 = повний блок)
+  model-scale: 0.6
+  # Витрачати предмет у креативі
+  consume-in-creative: true
+  glow: true
+
+  effects:
+    particles: true
+    sounds: true
+    actionbar: true
+
+  # Постійне гудіння дрона в польоті. Чути і оператору, і тим, над ким він летить.
+  sound:
+    enabled: true
+    name: ENTITY_BEE_LOOP
+    volume: 1.0
+    pitch: 1.6
+    interval-ticks: 10
+
+  drones:
+    # ── Важкий ударний ─────────────────────────────────────────
+    fp1:
+      name: "<gold><bold>🛩 FPV-ДРОН «FP-1»</bold></gold>"
+      material: TNT
+      speed: 0.6             # важкий, розігнатися не може
+      # boost-speed = speed → Ctrl нічого не дає: у FP-1 прискорення немає взагалі
+      boost-speed: 0.6
+      max-distance: 1500
+      flight-time: 240
+      explosion-power: 4.0   # ≈ один ванільний TNT
+      player-damage: 0       # без протипіхотного бонусу — тут працює сам вибух
+      player-damage-radius: 0
+      lore:
+        - "<dark_gray>Важкий ударний дрон."
+        - ""
+        - "<gray>📡 Дальність: <white>{distance}</white> блоків"
+        - "<gray>🔋 Час польоту: <white>{time}</white>с"
+        - "<gray>💥 Потужність: <white>{power}</white>"
+        - ""
+        - "<gray>▶ <white>ПКМ</white> — запустити"
+        - "<gray>⌨ <white>WASD</white> — керування"
+        - "<gray>␣ <white>Space / Shift</white> — висота"
+        - "<red>⚠ Прискорення (Ctrl) недоступне"
+        - "<red>⚠ Одноразове використання"
+      recipe:
+        shape:
+          - " P "
+          - "RTR"
+          - "ISI"
+        ingredients:
+          P: PHANTOM_MEMBRANE
+          R: REDSTONE
+          T: TNT
+          I: IRON_INGOT
+          S: SPYGLASS
+
+    # ── Протипіхотний ──────────────────────────────────────────
+    p1sun:
+      name: "<yellow><bold>🛩 FPV-ДРОН «P1-Sun»</bold></yellow>"
+      material: TNT
+      speed: 1.0             # найшвидший з трьох
+      boost-speed: 1.4
+      max-distance: 400
+      flight-time: 60
+      explosion-power: 1.0   # майже не чіпає забудову
+      player-damage: 100     # ...але гравця в епіцентрі вбиває напевно
+      player-damage-radius: 4
+      lore:
+        - "<dark_gray>Легкий протипіхотний дрон."
+        - ""
+        - "<gray>📡 Дальність: <white>{distance}</white> блоків"
+        - "<gray>🔋 Час польоту: <white>{time}</white>с"
+        - "<gray>💥 По блоках: <white>{power}</white>"
+        - "<red>🩸 По гравцях: <white>{damage}</white> шкоди"
+        - ""
+        - "<gray>Забудову майже не руйнує."
+      recipe:
+        shape:
+          - " D "
+          - "ITI"
+          - "RGR"
+        ingredients:
+          D: DIAMOND
+          I: IRON_INGOT
+          T: TNT
+          R: REDSTONE
+          G: GUNPOWDER
+
+    # ── Середній ───────────────────────────────────────────────
+    d1lduck:
+      name: "<white><bold>🛩 FPV-ДРОН «D1L-Duck»</bold></white>"
+      material: TNT
+      speed: 0.75
+      boost-speed: 1.1
+      max-distance: 600
+      flight-time: 120
+      explosion-power: 2.0   # половина TNT
+      player-damage: 0
+      player-damage-radius: 0
+      lore:
+        - "<dark_gray>Середній ударний дрон."
+        - ""
+        - "<gray>📡 Дальність: <white>{distance}</white> блоків"
+        - "<gray>🔋 Час польоту: <white>{time}</white>с"
+        - "<gray>💥 Потужність: <white>{power}</white>"
+      recipe:
+        shape:
+          - " D "
+          - "ITI"
+          - "GIG"
+        ingredients:
+          D: DIAMOND
+          I: IRON_INGOT
+          T: TNT
+          G: GUNPOWDER
+
+# ═══════════════════════════════════════════════
+#   Балістичні установки
+# ═══════════════════════════════════════════════
+#
+# Установка — це DISPENSER із міткою рівня в PDC самого блока.
+# ПКМ по ній відкриває панель керування, присів+ПКМ — відсік для ракет.
+#
+# Боєприпас — окрема крафтова ракета. Усі бойові характеристики (дальність, сила,
+# перезарядка, швидкість) належать саме ракеті й виписані в її lore.
+#
+# Наведення:
+#   1) /ballistic target <x> <z>  або  /ballistic target here
+#   2) кнопка «ЦІЛЬ» на панелі — режим розвідки з видом згори
+#   3) присів + ПКМ по filled map у рамці на стіні
+#
+# Важливо про потужність: 4.0 ≈ один звичайний TNT. Радіус вибуху росте нелінійно,
+# тому найважча ракета — 8.0, а не 4×5=20. Інакше один постріл зносив би пів бази.
+ballistic:
+  enabled: true
+  recipes-enabled: true
+
+  # Затримка перед пуском, секунд (3... 2... 1... ПУСК)
+  countdown-seconds: 3
+
+  # Звук відліку — навмисно глухий і низький, щоб не сперечався зі звуком пуску
+  countdown-sound:
+    name: BLOCK_NOTE_BLOCK_BASEDRUM
+    volume: 1.0
+    pitch: 0.55
+
+
+  # Плашка над установкою видима лише зблизька.
+  # Клієнт множить це на свій повзунок «Entity Distance», тож на 50% зникне вдвічі ближче.
+  hologram-distance: 3
+
+  explosion-fire: false
+  explosion-break-blocks: true
+
+  trajectory:
+    minimum-height: 60      # мінімальна висота дуги над хордою
+    height-per-block: 0.18  # приріст висоти на кожен блок дистанції
+    maximum-height: 220     # стеля дуги
+    speed: 3.0              # базова швидкість, якщо у ракети не задана своя
+    detonate-on-terrain: true  # підрив, якщо дуга зачепила гору по дорозі
+
+  # Сама ракета: корпус — сутність Trident, вона витягнута і сама повертається
+  # за напрямком руху, тож летить носом уперед без жодного ресурспака.
+  missile:
+    # Межі фаз польоту у частках пройденого шляху:
+    # 0..launch-phase — вертикальний старт, далі розгін, далі балістична ділянка,
+    # після ballistic-phase — пікірування на ціль.
+    launch-phase: 0.12
+    ascent-phase: 0.35
+    ballistic-phase: 0.70
+
+    # Множники швидкості відносно швидкості ракети: старт повільніший, пікірування швидше.
+    # Вище 1.3 піднімати не варто: у найшвидшої ракети (3.0) це дає рівно 3.9 бл/тік —
+    # межу, яку витримує пакет швидкості. За нею клієнт починає відставати від сервера.
+    launch-speed-multiplier: 0.5
+    descent-speed-multiplier: 1.3
+
+    # Радіус, у якому зараховується удар. У пікіруванні ракета проходить кілька блоків
+    # за тік, тож без цього вона могла б просто проскочити точку удару.
+    impact-radius: 2.5
+
+    # Запобіжник: політ довше цього часу завершується підривом (ракета не «зависає» назавжди)
+    max-flight-time-seconds: 120
+
+    # Ракета сама тримає завантаженими чанки під собою і попереду по курсу.
+    # Без цього постріл на кілька кілометрів іде в незавантажений світ — сутність там
+    # просто перестає існувати, і замість удару виходить тиша.
+    # Пройдені чанки звільняються одразу, тому слід із завантаженого світу за ракетою
+    # не тягнеться. Чим більший radius і look-ahead — тим більше навантаження на сервер.
+    chunk-loading:
+      enabled: true
+      radius: 1          # 1 = квадрат 3×3 чанки навколо точки
+      look-ahead: 48     # на скільки блоків уперед по курсу дивитися (48 = 3 чанки)
+
+    # Реактивний слід — малюється ПОЗАДУ ракети вздовж вектора руху.
+    # Частинки надсилаються з прапорцем «показувати здалеку»: інакше клієнт малює їх
+    # лише за 32 блоки, і сліду ракети на висоті 150+ не було б видно з землі взагалі.
+    exhaust:
+      enabled: true
+      flame-count: 6
+      smoke-count: 3
+      trail-length: 1.5    # довжина факела в блоках
+      trail-points: 3      # на скільки точок він розбитий
+      interval-ticks: 1
+
+    # Звук двигуна в польоті.
+    # УВАГА: гучність тут — це насамперед ДАЛЬНІСТЬ. Minecraft роздає звук гравцям
+    # у радіусі volume × 16 блоків, гучнішим за 1.0 він уже не стає. 6.0 ≈ 96 блоків.
+    sound:
+      enabled: true
+      name: ENTITY_BLAZE_SHOOT
+      volume: 6.0
+      pitch: 0.7
+      interval-ticks: 8
+
+    # Потужний факел і дим у момент пуску
+    launch-effect: true
+
+    # Звук пуску. Два шари феєрверка одночасно: низький «пуск» дає тіло звуку,
+    # верхній «розрив» — різкість. Гучність вища за звичайну, щоб старт було чути здалеку.
+    # 12.0 ≈ 192 блоки: пуск має бути чутно з сусідньої бази.
+    launch-sound:
+      enabled: true
+      name: ENTITY_FIREWORK_ROCKET_LAUNCH
+      volume: 12.0
+      pitch: 0.5
+      blast-name: ENTITY_FIREWORK_ROCKET_BLAST
+      blast-volume: 10.0
+      blast-pitch: 0.6
+
+  # Перехоплення: ракета підривається в повітрі.
+  # Сила береться з airburst-power конкретної ракети (див. launcher нижче).
+  interception:
+    fire: false
+    # true — збита біля землі ракета лишає слід на місцевості. Так реалістичніше:
+    # боєголовка нікуди не поділася, вона просто спрацювала не там, де цілилися.
+    break-blocks: true
+
+  warning:
+    enabled: true
+    radius: 250
+    # true — повідомляти точні координати удару, false — лише «у вашому районі»
+    exact-coords: true
+
+  effects:
+    particles: true
+    sounds: true
+
+  # Розвідувальний дрон установки.
+  # Не камікадзе: злітає, оглядає місцевість і має ПОВЕРНУТИСЯ на базу.
+  # Стаціонарна ППО його не бачить, але стріла з лука чи чужий FPV — цілком.
+  recon:
+    enabled: true
+    # Час польоту, секунд
+    flight-time: 600
+    # Швидкість (як у P1-Sun)
+    speed: 1.3
+    # Висота, на якій розвідник з'являється над установкою
+    launch-height: 5.0
+    # Повернення = посадка на саму установку: зависнути над її блоком і опуститися.
+    # Радіус по горизонталі й допустима висота над установкою.
+    landing-radius: 1.5
+    landing-height: 2.5
+    # Скільки секунд після зльоту посадка ще не зараховується
+    # (інакше розвідник «сідав» би одразу, бо злітає з тієї ж установки)
+    return-delay-seconds: 5
+    # Штрафна перезарядка установки, якщо розвідник не повернувся, хвилин
+    lost-cooldown-minutes: 30
+    # Дальність вибору блока. Велика навмисно: з висоти до землі далеко.
+    target-range: 512
+    # Міцність. Розвідник не вибухає об рельєф, як FPV, — він втрачає серце
+    # і його відкидає назад. Скінчилися серця — апарат розбито.
+    hearts: 5
+    # Пауза між ударами, тіків: без неї одне влітання в стіну з'їло б усі серця одразу
+    hit-cooldown-ticks: 10
+    # Тихіше за бойові дрони — розвідник має бути непомітнішим
+    sound:
+      enabled: true
+      name: ENTITY_BEE_LOOP
+      volume: 0.35
+      pitch: 1.9
+      interval-ticks: 15
+    # Модель: стійка з бронею, завалена на 90°
+    visible-stand: true
+    chestplate: CHAINMAIL_CHESTPLATE
+
+  launcher:
+    fp5:
+      level: 1
+      name: "<gray><bold>🚀 FP-5 launch system</bold></gray>"
+      range: 500
+      ammo: 1
+      explosion-power: 4.0
+      hits-to-intercept: 1
+      airburst-power: 5.0        # вибух, якщо ракету збили в повітрі
+      cooldown-seconds: 10
+      speed: 2.1                  # на 30% повільніше за базову
+      loses-control-when-hit: false
+      lore:
+        - "<dark_gray>Легка тактична установка."
+        - ""
+        - "<gray>📡 Дальність: <white>{range}</white> блоків"
+        - "<gray>💥 Потужність: <white>{power}</white>"
+        - "<gray>⏱ Перезарядка: <white>{cooldown}</white>с"
+        - ""
+        - "<gray>ПКМ — панель керування"
+        - "<gray>Присів+ПКМ — відсік для ракет"
+      rocket:
+        name: "<gray><bold>🚀 FP-5 rocket</bold></gray>"
+        lore:
+          - "<dark_gray>Боєприпас для {launcher}."
+          - ""
+          - "<gray>📡 Дальність: <white>{range}</white> блоків"
+          - "<gray>💥 Потужність: <white>{power}</white>"
+          - "<gray>🛡 Збиття ППО: <white>{hits}</white> влучання"
+          - "<gray>⏱ Перезарядка: <white>{cooldown}</white>с"
+        recipe:
+          amount: 1
+          shape:
+            - " I "
+            - "ITI"
+            - "IRI"
+          ingredients:
+            I: IRON_INGOT
+            T: TNT
+            R: REDSTONE
+      recipe:
+        shape:
+          - "IRI"
+          - "RDR"
+          - "IPI"
+        ingredients:
+          I: IRON_INGOT
+          R: REDSTONE
+          D: DISPENSER
+          P: REDSTONE_BLOCK
+
+    satan:
+      level: 2
+      name: "<white><bold>🚀 Satan launch system</bold></white>"
+      range: 1000
+      ammo: 1
+      explosion-power: 5.0
+      hits-to-intercept: 1
+      airburst-power: 6.0        # вибух, якщо ракету збили в повітрі
+      cooldown-seconds: 20
+      speed: 2.4                  # на 20% повільніше за базову
+      loses-control-when-hit: false
+      lore:
+        - "<dark_gray>Посилена установка."
+        - ""
+        - "<gray>📡 Дальність: <white>{range}</white> блоків"
+        - "<gray>💥 Потужність: <white>{power}</white>"
+        - "<gray>⏱ Перезарядка: <white>{cooldown}</white>с"
+      rocket:
+        name: "<white><bold>🚀 Satan rocket</bold></white>"
+        lore:
+          - "<dark_gray>Боєприпас для {launcher}."
+          - ""
+          - "<gray>📡 Дальність: <white>{range}</white> блоків"
+          - "<gray>💥 Потужність: <white>{power}</white>"
+          - "<gray>🛡 Збиття ППО: <white>{hits}</white> влучання"
+          - "<gray>⏱ Перезарядка: <white>{cooldown}</white>с"
+        recipe:
+          amount: 1
+          shape:
+            - " R "
+            - "BTB"
+            - " T "
+          ingredients:
+            B: IRON_BLOCK
+            T: TNT
+            R: REDSTONE
+      recipe:
+        shape:
+          - " B "
+          - "BDB"
+          - " P "
+        ingredients:
+          B: IRON_BLOCK
+          D: DISPENSER
+          P: REDSTONE_BLOCK
+
+    fp7:
+      level: 3
+      name: "<yellow><bold>🚀 FP-7 launch system</bold></yellow>"
+      range: 1500
+      ammo: 1
+      explosion-power: 6.0
+      hits-to-intercept: 2
+      airburst-power: 8.0        # вибух, якщо ракету збили в повітрі
+      cooldown-seconds: 30
+      speed: 2.7                  # на 10% повільніше за базову
+      # Витримує одне влучання ППО, але втрачає керування й падає
+      loses-control-when-hit: true
+      lore:
+        - "<dark_gray>Оперативно-тактична установка."
+        - ""
+        - "<gray>📡 Дальність: <white>{range}</white> блоків"
+        - "<gray>💥 Потужність: <white>{power}</white>"
+        - "<gray>⏱ Перезарядка: <white>{cooldown}</white>с"
+      rocket:
+        name: "<yellow><bold>🚀 FP-7 rocket</bold></yellow>"
+        lore:
+          - "<dark_gray>Боєприпас для {launcher}."
+          - ""
+          - "<gray>📡 Дальність: <white>{range}</white> блоків"
+          - "<gray>💥 Потужність: <white>{power}</white>"
+          - "<gray>🛡 Збиття ППО: <white>{hits}</white> влучання"
+          - "<gray>⏱ Перезарядка: <white>{cooldown}</white>с"
+          - ""
+          - "<red>⚠ Після влучання ППО втрачає керування"
+        recipe:
+          amount: 1
+          shape:
+            - "BPB"
+            - "BRB"
+            - "TTT"
+          ingredients:
+            B: IRON_BLOCK
+            P: REDSTONE_BLOCK
+            R: REDSTONE
+            T: TNT
+      recipe:
+        shape:
+          - " B "
+          - "BLB"
+          - " P "
+        ingredients:
+          B: IRON_BLOCK
+          L: "LAUNCHER:fp5"
+          P: REDSTONE_BLOCK
+
+    fp9:
+      level: 4
+      name: "<red><bold>🚀 FP-9 launch system</bold></red>"
+      range: 2500
+      ammo: 1
+      explosion-power: 8.0
+      hits-to-intercept: 2
+      airburst-power: 10.0        # вибух, якщо ракету збили в повітрі
+      cooldown-seconds: 60
+      speed: 3.0
+      loses-control-when-hit: true
+      lore:
+        - "<dark_gray>Стратегічна установка."
+        - ""
+        - "<gray>📡 Дальність: <white>{range}</white> блоків"
+        - "<gray>💥 Потужність: <white>{power}</white>"
+        - "<gray>⏱ Перезарядка: <white>{cooldown}</white>с"
+      rocket:
+        name: "<red><bold>🚀 FP-9 rocket</bold></red>"
+        lore:
+          - "<dark_gray>Боєприпас для {launcher}."
+          - ""
+          - "<gray>📡 Дальність: <white>{range}</white> блоків"
+          - "<gray>💥 Потужність: <white>{power}</white>"
+          - "<gray>🛡 Збиття ППО: <white>{hits}</white> влучання"
+          - "<gray>⏱ Перезарядка: <white>{cooldown}</white>с"
+          - ""
+          - "<red>⚠ Після влучання ППО втрачає керування"
+        recipe:
+          amount: 1
+          shape:
+            - "BPB"
+            - "B7B"
+            - "BDB"
+          ingredients:
+            B: IRON_BLOCK
+            P: REDSTONE_BLOCK
+            "7": "ROCKET:fp7"
+            D: DIAMOND_BLOCK
+      recipe:
+        shape:
+          - "CKC"
+          - "NLN"
+          - "CPC"
+        ingredients:
+          C: DIAMOND_BLOCK
+          K: NETHERITE_BLOCK
+          N: NETHERITE_INGOT
+          L: "LAUNCHER:fp7"
+          P: REDSTONE_BLOCK
+
+# ═══════════════════════════════════════════════
+#   Стаціонарна автоматична ППО
+# ═══════════════════════════════════════════════
+#
+# Диспенсер із міткою рівня, який сам сканує зону навколо себе і пускає керовані
+# палаючі стріли-перехоплювачі по всьому ворожому, що залетіло в радіус.
+#
+#   ПКМ — інформація, присів+ПКМ — зарядити ракети.
+#   Редстоун установку не активує: вона стріляє сама і тільки по цілях.
+#
+# Зона контролю — ЦИЛІНДР: range — радіус по горизонталі, vertical-range — скільки
+# установка дістає вгору і вниз. Тобто range 40 = зона 80×80 блоків заввишки
+# 2 × vertical-range. Навмисно небагато: ППО має прикривати базу, а не пів карти.
+#
+# У кожної установки власна ракета: перехоплювач від NASAMS у Patriot не влізе.
+air-defence-system:
+  enabled: true
+  recipes-enabled: true
+
+  # Зараховувати перехоплення власнику установки в /ppo stats
+  count-in-stats: true
+
+
+  # Плашка над установкою видима лише зблизька.
+  # Клієнт множить це на свій повзунок «Entity Distance», тож на 50% зникне вдвічі ближче.
+  hologram-distance: 3
+
+  # Блок декоративної башти над установкою (повертається за ціллю)
+  turret-block: POLISHED_DEEPSLATE_WALL
+
+  targeting:
+    tnt: true
+    fpv-drone: true
+    ballistic-missile: true
+    # false — не стріляти по снарядах власника установки та його сторони (див. teams нижче)
+    friendly-fire: false
+    # Установка не стріляє крізь гори. Тому ППО має сенс ставити на дахах і баштах.
+    require-line-of-sight: true
+    # Скільки марних влучань по одній ракеті система робить, перш ніж перейти на інші цілі.
+    # Потрібно, щоб слабка ППО не висаджувала весь боєкомплект у ракету, яка їй не по зубах,
+    # але й не ігнорувала її демонстративно.
+    wasted-shots-per-missile: 2
+    # Скільки секунд пам'ятати вердикт по ракеті (політ найдовшої — близько 45 с)
+    verdict-ttl-seconds: 180
+
+
+  interceptor:
+    flame-trail: true
+    smoke-trail: true
+    # Через скільки тіків перехоплювач самознищується, якщо не влучив.
+    # Балістику доводиться наздоганяти довго, тому запас чималий.
+    lifetime-ticks: 200
+    # Радіус влучання. Перехоплювач долає кілька блоків за тік, тому влучання
+    # перевіряється по всьому відрізку шляху, а не лише по кінцевій точці.
+    hit-distance: 1.0
+
+  ammo:
+    # false — установка приймає ТІЛЬКИ свою ракету.
+    # true — згодиться будь-яка звичайна стріла (дешево, тому за замовчуванням вимкнено).
+    allow-plain-arrows: false
+
+  launcher:
+    nasams:
+      level: 1
+      name: "<gray><bold>🛡 NASAMS air defense</bold></gray>"
+      range: 40              # зона ~80×80
+      vertical-range: 56
+      max-targets: 1
+      scan-interval: 4
+      fire-cooldown: 300     # один пуск на 15 с
+      interceptor-speed: 2.0
+      # Шанс упоратися з балістичною ракетою. Кидається ОДИН раз на ракету:
+      # серії ні на що не впливають — після десяти збитих одинадцята має ті самі шанси.
+      # Дронів і TNT це не стосується взагалі, по них ППО працює як завжди.
+      missile-hit-chance: 0.2   # приблизно 2 ракети з 10
+      lore:
+        - "<dark_gray>Стаціонарна установка ППО."
+        - ""
+        - "<gray>📡 Зона: <white>{zone}×{zone}</white> блоків"
+        - "<gray>🎯 Цілей одночасно: <white>{targets}</white>"
+        - "<gray>⏱ Темп: <white>{cooldown}</white>с"
+        - ""
+        - "<gray>ПКМ — інформація"
+        - "<gray>Присів+ПКМ — зарядити"
+        - "<red>⚠ Потребує NASAMS rocket"
+      ammo:
+        name: "<gray><bold>🔥 NASAMS rocket</bold></gray>"
+        lore:
+          - "<dark_gray>Боєприпас для {launcher}."
+          - ""
+          - "<gray>Кладеться всередину установки."
+          - "<gray>З лука стріляє як звичайна стріла."
+        recipe:
+          amount: 1
+          shape:
+            - " A "
+            - " G "
+            - " R "
+          ingredients:
+            A: ARROW
+            G: GUNPOWDER
+            R: REDSTONE
+      recipe:
+        shape:
+          - "IBI"
+          - "RDR"
+          - "III"
+        ingredients:
+          I: IRON_INGOT
+          B: BLAZE_ROD
+          R: REDSTONE_BLOCK
+          D: DISPENSER
+
+    patriot:
+      level: 2
+      name: "<white><bold>🛡 Patriot air defense</bold></white>"
+      range: 48              # зона ~96×96
+      vertical-range: 64
+      max-targets: 2
+      scan-interval: 4
+      fire-cooldown: 200     # один пуск на 10 с
+      interceptor-speed: 2.5
+      missile-hit-chance: 0.6   # приблизно 6 ракет з 10
+      lore:
+        - "<dark_gray>Посилена установка ППО."
+        - ""
+        - "<gray>📡 Зона: <white>{zone}×{zone}</white> блоків"
+        - "<gray>🎯 Цілей одночасно: <white>{targets}</white>"
+        - "<gray>⏱ Темп: <white>{cooldown}</white>с"
+        - "<red>⚠ Потребує Patriot rocket"
+      ammo:
+        name: "<white><bold>🔥 Patriot rocket</bold></white>"
+        lore:
+          - "<dark_gray>Боєприпас для {launcher}."
+          - ""
+          - "<gray>Кладеться всередину установки."
+        recipe:
+          amount: 1
+          shape:
+            - " I "
+            - "GAG"
+            - " R "
+          ingredients:
+            I: IRON_INGOT
+            A: ARROW
+            G: GUNPOWDER
+            R: REDSTONE
+      recipe:
+        shape:
+          - " D "
+          - "DAD"
+          - " E "
+        ingredients:
+          D: DIAMOND
+          A: "AA:nasams"
+          E: ENDER_EYE
+
+    freyja:
+      level: 3
+      name: "<gold><bold>🛡 FREYJA air defense</bold></gold>"
+      range: 64              # зона ~128×128
+      vertical-range: 80
+      max-targets: 3
+      scan-interval: 3
+      fire-cooldown: 40      # один пуск на 2 с
+      interceptor-speed: 4.0
+      missile-hit-chance: 0.9   # приблизно 9 ракет з 10
+      lore:
+        - "<dark_gray>Важка установка ППО."
+        - ""
+        - "<gray>📡 Зона: <white>{zone}×{zone}</white> блоків"
+        - "<gray>🎯 Цілей одночасно: <white>{targets}</white>"
+        - "<gray>⏱ Темп: <white>{cooldown}</white>с"
+        - "<red>⚠ Потребує FREYJA rocket"
+      ammo:
+        name: "<gold><bold>🔥 FREYJA rocket</bold></gold>"
+        lore:
+          - "<dark_gray>Боєприпас для {launcher}."
+          - ""
+          - "<gray>Кладеться всередину установки."
+        recipe:
+          amount: 1
+          shape:
+            - "GIG"
+            - "GAG"
+            - " G "
+          ingredients:
+            I: IRON_INGOT
+            A: ARROW
+            G: GUNPOWDER
+      recipe:
+        shape:
+          - " E "
+          - "NAN"
+          - " D "
+        ingredients:
+          E: ENDER_EYE
+          N: NETHERITE_INGOT
+          A: "AA:patriot"
+          D: DIAMOND_BLOCK
+
+# ═══════════════════════════════════════════════
+#   Повітряна тривога (інтеграція з TerritoryMap)
+# ═══════════════════════════════════════════════
+#
+# Замість голих координат тривога оголошується по території, виділеній у TerritoryMap:
+# «летить ракета на Solaria». Території читаються прямо з його territories.yml, тож
+# BobsterDefence не залежить від збірки TerritoryMap і підхоплює нові території сам.
+#
+# Тривога вмикається, коли:
+#   • балістична ракета летить у точку всередині території;
+#   • FPV-дрон опинився ближче за drone-radius до її межі.
+# Вимикається сама, коли all-clear-minutes хвилин над територією нічого не літало.
+air-raid:
+  enabled: true
+
+  # Порожньо = plugins/TerritoryMap/territories.yml поруч із нами.
+  # Можна вказати повний шлях, якщо файл лежить деінде.
+  territory-file: ""
+  # Як часто перевіряти, чи файл територій змінився, секунд
+  reload-seconds: 30
+
+  # Скільки хвилин без активності до відбою
+  all-clear-minutes: 3
+
+  # На якій відстані від межі території дрон уже вважається загрозою
+  drone-radius: 100
+  # Запас навколо території для ракети. 0 = тривога лише коли ціль усередині території.
+  missile-radius: 0
+  # Не вмикати тривогу, якщо снаряд належить власнику території або його коаліції
+  skip-friendly: true
+
+  # Раз на скільки секунд перевіряти дрон проти однієї території
+  drone-check-seconds: 2
+
+  # Звук сирени всім онлайн при оголошенні тривоги
+  siren-sound: true
+
+  discord:
+    # Надсилати тривоги в Discord через DiscordSRV, якщо він встановлений
+    enabled: true
+    # Порожньо = головний канал DiscordSRV. Інакше — ім'я каналу з його config.yml.
+    channel: ""
+
+# Сторони. Потрібні, щоб ППО не збивала снаряди своїх.
+# Гравці, яких тут немає, вважаються сам за себе: власна ППО не б'є по власних снарядах,
+# але по снарядах будь-кого іншого — б'є.
+teams:
+  # bobster:
+  #   - KpoJIeBapKa
+  #   - aceLmR
+
+# Статистика перехоплень
+stats:
+  enabled: true
+  # Автозбереження stats.yml, у секундах (0 = тільки при вимкненні плагіна)
+  autosave-seconds: 300
+  # Скільки гравців показувати в /ppo top
+  top-size: 10
+
+# Повідомлення. Формат — MiniMessage (<red>, <gradient:...>, <bold> тощо).
+# Плейсхолдери описані біля кожного рядка.
+messages:
+  prefix: "<gray>[<gold><bold>ППО</bold></gold><gray>]</gray> "
+
+  # ─── ППО ───
+  # {kills} — всього перехоплень гравцем
+  intercept-actionbar: "<red><bold>🛡 ППО BOBSTER</bold></red> <dark_gray>|</dark_gray> <green><bold>ЦІЛЬ ЗНИЩЕНО</bold></green> <dark_gray>(<white>{kills}</white>)</dark_gray>"
+  intercept-drone-actionbar: "<red><bold>🛡 ППО BOBSTER</bold></red> <dark_gray>|</dark_gray> <green><bold>FPV-ДРОН ЗНИЩЕНО</bold></green> <dark_gray>(<white>{kills}</white>)</dark_gray>"
+
+  # ─── FPV-дрон ───
+  # {name}
+  drone-launched: "<green>🛩 {name} у повітрі. <gray>WASD — рух, Space/Shift — висота."
+  # {name}, {bar}, {percent}, {seconds}, {distance}, {max-distance}
+  drone-hud: "<gold>{name}</gold> <dark_gray>|</dark_gray> <green>{bar}</green> <white>{percent}%</white> <dark_gray>|</dark_gray> <yellow>🔋 {seconds}s</yellow> <dark_gray>|</dark_gray> <aqua>📡 {distance}м</aqua>"
+  drone-detonated: "<red>💥 Дрон детоновано."
+  drone-signal-lost: "<red>📡 СИГНАЛ ВТРАЧЕНО <gray>— дрон самознищився."
+  drone-battery-empty: "<red>⚠ ЖИВЛЕННЯ ВИЧЕРПАНО <gray>— дрон самознищився."
+  # {player} — хто збив
+  drone-intercepted: "<red><bold>☠ FPV-ДРОН ВТРАЧЕНО</bold></red> <gray>— перехоплений ППО ({player})."
+  # {player} — хто протаранив
+  drone-rammed: "<red><bold>☠ FPV-ДРОН ВТРАЧЕНО</bold></red> <gray>— збитий тараном ({player})."
+  drone-operator-killed: "<red>☠ Оператора вбито — дрон детонує."
+  drone-disabled: "<red>Модуль FPV-дрона вимкнено."
+  drone-spectator: "<red>Запустити дрон зі spectator неможливо."
+  drone-unknown-type: "<red>Невідомий тип дрона: <white>{type}</white>"
+  drone-usage: "<gray>Використання: <white>/drone list</white> або <white>/drone give <fp1|p1sun|d1lduck> [нік] [кількість]"
+  drone-list-header: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>
+<gold><bold>  🛩 FPV-ДРОНИ</bold></gold>
+<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+  # {id}, {name}, {distance}, {time}, {power}, {damage}, {speed}
+  drone-list-line: "{name} <dark_gray>(<white>{id}</white>)</dark_gray>
+<gray>  📡 <white>{distance}</white> бл · 🔋 <white>{time}</white>с · 💥 <white>{power}</white> · 🩸 <white>{damage}</white> · 🛩 <white>{speed}</white>"
+  # {player} — нік оператора
+  drone-body-name: "<gray>{player} <dark_gray>|</dark_gray> <red>оператор FPV"
+  # {name}, {player}, {amount}
+  drone-given: "<green>Видано <white>{amount}</white> × {name} <green>гравцю <white>{player}</white>."
+
+  # ─── балістика ───
+  # {left}, {total}
+  intercept-missile-progress: "<gold><bold>🛡 ППО</bold></gold> <dark_gray>|</dark_gray> <yellow>ВЛУЧАННЯ</yellow> <dark_gray>(залишилось <white>{left}</white>)</dark_gray>"
+  intercept-missile-actionbar: "<red><bold>🛡 ППО BOBSTER</bold></red> <dark_gray>|</dark_gray> <green><bold>РАКЕТУ ЗБИТО</bold></green> <dark_gray>(<white>{kills}</white>)</dark_gray>"
+
+  # {name}
+  ballistic-placed: "<green>Установку <white>{name}</white> розгорнуто. <gray>ПКМ — панель керування."
+  # {x}, {z}, {distance}, {range}
+  ballistic-target-set: "<green>🎯 Ціль встановлено: <white>X {x}, Z {z}</white> <gray>({distance}м)"
+  ballistic-target-too-far: "<yellow>🎯 Ціль <white>X {x}, Z {z}</white> задано, але це <red>{distance}м</red> при дальності <white>{range}</white>м — пуск заблоковано."
+  ballistic-target-help: "<gray>Наведення: <white>/ballistic target <x> <z></white>, <white>/ballistic target here</white>\n<gray>кнопка «ЦІЛЬ» на панелі (розвідник), або присів + ПКМ по карті в рамці."
+  # {x}, {z}, {seconds}
+  ballistic-launched: "<red><bold>🚀 ПУСК</bold></red> <gray>— ціль <white>X {x}, Z {z}</white>, підліт ~<white>{seconds}</white>с"
+  ballistic-impact: "<gray>💥 Влучання: <white>X {x}, Z {z}</white>"
+  ballistic-intercepted-shooter: "<red>☠ Ракету перехоплено ППО в районі <white>X {x}, Z {z}</white>"
+  ballistic-damaged: "<yellow>⚠ Ракета вціліла, але втратила керування — вона падає."
+  # {seconds}
+  ballistic-countdown: "<red><bold>🚀 ПУСК ЧЕРЕЗ {seconds}...</bold></red>"
+  ballistic-no-target: "<red>Ціль не задано. <gray>/ballistic target <x> <z>"
+  # {range}
+  ballistic-out-of-range: "<red>Ціль поза межами дальності (<white>{range}</white> блоків)."
+  ballistic-no-ammo: "<red>Немає ракети. <gray>Поклади всередину відповідну ракету."
+  # {cooldown}
+  ballistic-cooldown: "<red>Установка перезаряджається <gray>({cooldown}с)."
+  ballistic-disabled: "<red>Модуль балістики вимкнено."
+  ballistic-not-selected: "<red>Спочатку клікни по установці."
+  ballistic-players-only: "<red>Команда доступна тільки гравцям."
+  ballistic-map-not-a-map: "<red>У рамці немає заповненої карти."
+  ballistic-map-wall-only: "<red>Наведення працює лише по картах на вертикальній стіні."
+  ballistic-unknown-tier: "<red>Невідома установка: <white>{tier}</white>"
+  ballistic-given: "<green>Видано <white>{name}</white> гравцю <white>{player}</white>."
+  ballistic-usage: "<gray>Використання: <white>/ballistic <target <x> <z>|target here|launch|info|mark|give <тип>|rocket <тип>>"
+  # {name}, {x}, {z}, {distance}, {range}, {ammo}, {need}, {power}, {hits}
+  ballistic-info: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>\n{name}\n<gray>🎯 Ціль: <white>X {x}, Z {z}</white> <dark_gray>({distance}м / {range}м)</dark_gray>\n<gray>🚀 Ракет: <white>{ammo}</white>\n<gray>💥 Потужність: <white>{power}</white> <dark_gray>|</dark_gray> <gray>🛡 Збиття: <white>{hits}</white> влучань\n<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+
+  # ─── розвідувальний дрон ───
+  # {minutes}, {range}
+  recon-launched: "<green>🛰 Розвідник у повітрі. <gray>Заряду на <white>{minutes}</white> хв.\n<gray>Наведись на точку і клікни (або <white>/ballistic mark</white>), тоді <white>сідай назад на установку</white>."
+  # {x}, {z}, {seconds}, {base}, {state}
+  recon-hud: "<aqua>🛰 РОЗВІДНИК</aqua> <dark_gray>|</dark_gray> <white>X {x}, Z {z}</white> <dark_gray>|</dark_gray> <yellow>🔋 {seconds}s</yellow> <dark_gray>|</dark_gray> <red>❤ {hearts}</red> <dark_gray>|</dark_gray> <gray>🏠 {base}м</gray> <dark_gray>|</dark_gray> {state}"
+  # {hearts}, {max}
+  recon-damaged: "<red>💥 Удар об рельєф! <gray>Міцність: <white>{hearts}</white>/<white>{max}</white>"
+  recon-state-searching: "<gray>ціль не задана"
+  recon-state-marked: "<green>ціль задана — сідай на установку!"
+  # {x}, {z}, {distance}
+  recon-target-set: "<green>🎯 Ціль записано: <white>X {x}, Z {z}</white> <gray>({distance}м). Тепер повертайся на базу."
+  recon-returned: "<green>🛰 Розвідник повернувся на базу."
+  # {minutes}, {x}, {z}
+  recon-lost: "<red>🛰 Розвідника втрачено в районі <white>X {x}, Z {z}</white>.\n<gray>Наступний буде готовий через <white>{minutes}</white> хв."
+  # {minutes}
+  recon-timeout: "<red>🛰 Заряд розвідника вичерпано, він не повернувся.\n<gray>Наступний буде готовий через <white>{minutes}</white> хв."
+  recon-cooldown: "<red>🛰 Розвідник ще не готовий. <gray>Залишилось <white>{minutes}</white> хв."
+  # {range}
+  recon-no-block: "<red>Наведись на блок — далі за <white>{range}</white> блоків нічого не видно."
+  # {distance}, {range}
+  recon-too-far: "<red>Задалеко: <white>{distance}м</white> при дальності установки <white>{range}м</white>."
+  recon-not-flying: "<red>Ти зараз не керуєш розвідником."
+
+  # ─── повітряна тривога по територіях ───
+  # {territory} — назва території, {owner} — власник, {minutes} — до відбою
+  air-raid-start: "<dark_red><bold>🚨 ПОВІТРЯНА ТРИВОГА</bold></dark_red>\n<red>Територія <white>{territory}</white> <dark_gray>(<gray>{owner}</gray>)</dark_gray>\n<gray>Пройдіть в укриття."
+  air-raid-end: "<dark_green><bold>🟢 ВІДБІЙ ТРИВОГИ</bold></dark_green>\n<green>Територія <white>{territory}</white> <gray>— {minutes} хв без активності."
+  air-raid-threat-missile: "балістична ракета"
+  air-raid-threat-drone: "FPV-дрон"
+  # Текст для Discord — без MiniMessage-розмітки, вона там усе одно не працює
+  air-raid-discord-start: "🚨 **ПОВІТРЯНА ТРИВОГА** — {territory} ({owner})"
+  air-raid-discord-end: "🟢 **ВІДБІЙ ТРИВОГИ** — {territory}"
+
+  # ─── попередження про удар (для землі поза територіями) ───
+  ballistic-warning-exact: "<dark_red><bold>🚨 БАЛІСТИЧНА ЗАГРОЗА</bold></dark_red>\n<red>Зафіксовано запуск ракети.\n<gray>Розрахункова зона удару: <white>X {x}, Z {z}</white>"
+  ballistic-warning-vague: "<dark_red><bold>🚨 РАКЕТНА НЕБЕЗПЕКА</bold></dark_red>\n<red>У вашому районі очікується удар."
+
+  # ─── голограма над установкою ───
+  # {name}, {target}, {ammo}, {need}
+  ballistic-hologram: "<gold>{name}</gold>\n<gray>TARGET: <white>{target}</white>\n<gray>ROCKETS: <white>{ammo}</white>"
+  ballistic-no-target-short: "NOT SET"
+
+  # ─── панель керування ───
+  ballistic-gui-title: "<dark_gray>🚀 Пульт керування"
+  ballistic-gui-status-name: "<gold><bold>СТАТУС</bold>"
+  ballistic-gui-status-lore:
+    - "<gray>Дальність: <white>{range}</white> блоків"
+    - "<gray>Потужність: <white>{power}</white>"
+    - "<gray>Збиття ППО: <white>{hits}</white> влучань"
+    - "<gray>Перезарядка: <white>{cooldown}</white>с"
+  ballistic-gui-target-name: "<yellow><bold>ЦІЛЬ: <white>{x}, {z}</white></bold>"
+  ballistic-gui-target-lore:
+    - "<gray>Відстань: <white>{distance}</white>м"
+    - ""
+    - "<gray>Клік — запустити розвідника"
+  ballistic-gui-ammo-name: "<red><bold>РАКЕТ: <white>{ammo}</white></bold>"
+  ballistic-gui-ammo-lore:
+    - "<gray>Клік — відкрити відсік"
+  ballistic-gui-fire-name: "<green><bold>▶ ЗАПУСК</bold>"
+  ballistic-gui-fire-blocked-name: "<dark_gray><bold>▶ ЗАПУСК НЕДОСТУПНИЙ</bold>"
+  ballistic-gui-fire-lore:
+    - "<gray>Ціль: <white>{x}, {z}</white>"
+    - "<gray>Ракет: <white>{ammo}</white>"
+
+  # ─── стаціонарна ППО ───
+  # {name}, {zone}
+  aa-placed: "<green>Установку <white>{name}</white> розгорнуто. <gray>Зона {zone}×{zone}. Не забудь зарядити ракети."
+  # {name}, {zone}, {range}, {vertical}, {targets}, {cooldown}, {ammo}, {owner}
+  aa-info: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>\n{name}\n<gray>📡 Зона: <white>{zone}×{zone}</white> <dark_gray>(радіус {range}, висота {vertical})</dark_gray>\n<gray>🎯 Цілей одночасно: <white>{targets}</white> <dark_gray>|</dark_gray> <gray>⏱ Темп: <white>{cooldown}</white>с\n<gray>🏹 Боєзапас: <white>{ammo}</white>\n<gray>👤 Власник: <white>{owner}</white>\n<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+  aa-unknown-tier: "<red>Невідома установка ППО: <white>{tier}</white>"
+  aa-given: "<green>Видано <white>{name}</white> гравцю <white>{player}</white>."
+  aa-ammo-given: "<green>Видано <white>{amount}</white> × {name} <green>гравцю <white>{player}</white>."
+  aa-usage: "<gray>Команди ППО:
+<white>/ppo list</white> <dark_gray>—</dark_gray> <gray>установки та їхні характеристики
+<white>/ppo give <nasams|patriot|freyja> [нік]</white> <dark_gray>—</dark_gray> <gray>видати установку
+<white>/ppo ammo <nasams|patriot|freyja> [кількість] [нік]</white> <dark_gray>—</dark_gray> <gray>видати ракети"
+  aa-list-header: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>
+<gold><bold>  🛡 СТАЦІОНАРНА ППО</bold></gold>
+<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+  # {id}, {name}, {zone}, {targets}, {cooldown}, {ammo}
+  aa-list-line: "{name} <dark_gray>(<white>{id}</white>)</dark_gray>
+<gray>  📡 <white>{zone}×{zone}</white> · 🎯 <white>{targets}</white> · ⏱ <white>{cooldown}</white>с · 🔥 {ammo}"
+
+  # ─── голограма над ППО ───
+  # {name}, {status}, {ammo}
+  aa-hologram: "<gold>{name}</gold>\n{status} <dark_gray>|</dark_gray> <gray>🏹 <white>{ammo}</white>"
+  aa-status-active: "<green>🟢 ACTIVE"
+  aa-status-lock: "<gold>🟠 TARGET LOCK"
+  aa-status-no-ammo: "<red>🔴 NO AMMO"
+
+  # ─── коаліції ───
+  coalition-usage: "<gray>Коаліції:\n<white>/coalition create <назва></white> <dark_gray>—</dark_gray> <gray>створити\n<white>/coalition add <нік></white> <dark_gray>—</dark_gray> <gray>додати гравця\n<white>/coalition kick <нік></white> <dark_gray>—</dark_gray> <gray>виключити\n<white>/coalition info</white> <dark_gray>—</dark_gray> <gray>склад\n<white>/coalition leave</white> <dark_gray>—</dark_gray> <gray>вийти\n<white>/coalition disband</white> <dark_gray>—</dark_gray> <gray>розпустити"
+  coalition-players-only: "<red>Команда доступна тільки гравцям."
+  # {name}
+  coalition-created: "<green>Коаліцію <white>{name}</white> створено. <gray>Тепер додай своїх: <white>/coalition add <нік>"
+  coalition-exists: "<red>Коаліція <white>{name}</white> уже існує."
+  coalition-name-too-long: "<red>Назва задовга — максимум 24 символи."
+  coalition-already-member: "<red>Ти вже в коаліції. <gray>Спершу вийди: <white>/coalition leave"
+  coalition-none: "<red>Ти не в коаліції. <gray>Створи свою: <white>/coalition create <назва>"
+  coalition-not-owner: "<red>Керувати коаліцією <white>{name}</white> може лише її засновник."
+  # {player}, {name}
+  coalition-added: "<green>Гравця <white>{player}</white> додано до <white>{name}</white>."
+  coalition-you-joined: "<green>Тебе прийнято в коаліцію <white>{name}</white>. <gray>Ваші снаряди більше не збивають одне одного."
+  coalition-target-busy: "<red>Гравець <white>{player}</white> уже в іншій коаліції."
+  coalition-not-member: "<red>Гравця <white>{player}</white> немає у твоїй коаліції."
+  coalition-removed: "<green>Гравця <white>{player}</white> виключено з <white>{name}</white>."
+  coalition-left: "<gray>Ти вийшов з коаліції <white>{name}</white>."
+  coalition-owner-cannot-leave: "<red>Засновник не може вийти. <gray>Або передай командування, або розпусти: <white>/coalition disband"
+  coalition-disbanded: "<gray>Коаліцію <white>{name}</white> розпущено."
+  # {name}, {owner}, {count}, {members}
+  coalition-info: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>\n<gold><bold>⚔ {name}</bold></gold>\n<gray>Засновник: <white>{owner}</white>\n<gray>Склад (<white>{count}</white>): <white>{members}</white>\n<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+
+  # ─── захист установок ───
+  # {owner}
+  ballistic-gone: "<red>Установки тут більше немає."
+  ballistic-not-owner: "<red>Установка належить <white>{owner}</white>. <gray>Руками її не розібрати — тільки знищити ракетою чи дроном."
+  aa-not-owner: "<red>ППО належить <white>{owner}</white>. <gray>Руками її не розібрати — тільки знищити ракетою чи дроном."
+
+  # ─── розвідник: відмови ───
+  recon-spawn-failed: "<red>Не вдалося підняти розвідника. <gray>Деталі — у консолі сервера."
+  recon-disabled: "<red>Розвідник вимкнений у конфігу."
+  recon-already-flying: "<red>Ти вже керуєш розвідником."
+  recon-busy-drone: "<red>Спершу заверши політ FPV-дрона."
+
+  # ─── статистика та команди ───
+  stats-header: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>\n<gold><bold>  ⚔ BOBSTER ППО ⚔</bold></gold>\n<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+  stats-footer: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+  # {player}, {kills}
+  stats-self: "<gray>Твої перехоплення: <yellow><bold>{kills}</bold></yellow>"
+  stats-other: "<gray>{player} <dark_gray>—</dark_gray> <yellow><bold>{kills}</bold></yellow> <gray>цілей"
+  # {medal}, {position}, {player}, {kills}
+  top-line: "<gray>{medal} <white>{player}</white> <dark_gray>—</dark_gray> <yellow>{kills}</yellow> <gray>цілей"
+  # {total}
+  top-total: "<gray>💥 Всього перехоплено: <red><bold>{total}</bold></red>"
+  top-empty: "<gray>Поки що ніхто нічого не збив."
+  reloaded: "<green>Конфігурацію перезавантажено."
+  no-permission: "<red>Немає прав."
+  unknown-player: "<red>Гравця <white>{player}</white> не знайдено."
+  usage: "<gray>Використання: <white>/ppo [stats|top|list|give|ammo|reload]"

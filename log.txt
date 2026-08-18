@@ -1,0 +1,13 @@
+00:47:07 WARN]: [BobsterDefence] Task #29 for BobsterDefence v1.9.0 generated an exception
+java.util.ConcurrentModificationException: null
+        at java.base/java.util.ArrayList$Itr.checkForComodification(ArrayList.java:1095) ~[?:?]
+        at java.base/java.util.ArrayList$Itr.remove(ArrayList.java:1063) ~[?:?]
+        at BobsterDefence-1.9.0.jar/ua.bobster.defence.ballistic.BallisticManager.tickAll(BallisticManager.java:175) ~[BobsterDefence-1.9.0.jar:?]
+        at org.bukkit.craftbukkit.scheduler.CraftTask.run(CraftTask.java:86) ~[paper-1.21.1.jar:1.21.1-133-3cb8529]
+        at org.bukkit.craftbukkit.scheduler.CraftScheduler.mainThreadHeartbeat(CraftScheduler.java:475) ~[paper-1.21.1.jar:1.21.1-133-3cb8529]
+        at net.minecraft.server.MinecraftServer.tickChildren(MinecraftServer.java:1724) ~[paper-1.21.1.jar:1.21.1-133-3cb8529]
+        at net.minecraft.server.dedicated.DedicatedServer.tickChildren(DedicatedServer.java:473) ~[paper-1.21.1.jar:1.21.1-133-3cb8529]
+        at net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:1596) ~[paper-1.21.1.jar:1.21.1-133-3cb8529]
+        at net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:1302) ~[paper-1.21.1.jar:1.21.1-133-3cb8529]
+        at net.minecraft.server.MinecraftServer.lambda$spin$0(MinecraftServer.java:329) ~[paper-1.21.1.jar:1.21.1-133-3cb8529]
+        at java.base/java.lang.Thread.run(Thread.java:1583) ~[?:?]

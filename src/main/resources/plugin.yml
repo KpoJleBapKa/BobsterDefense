@@ -1,0 +1,63 @@
+name: BobsterDefence
+version: '${project.version}'
+main: ua.bobster.defence.BobsterDefence
+api-version: '1.21'
+authors: [Bobster]
+description: Chest Protection + Air Defence (ППО) + FPV-дрон + балістика
+folia-supported: false
+softdepend:
+  - TerritoryMap
+  - DiscordSRV
+
+commands:
+  ppo:
+    description: Bobster ППО - статистика та керування
+    usage: /ppo [stats|top|list|give|ammo|reload]
+    aliases: [airdefence, bd]
+  drone:
+    description: FPV-дрони - список моделей та видача
+    usage: /drone <list|give <тип> [нік] [кількість]>
+    aliases: [fpv, дрон]
+  ballistic:
+    description: Балістична установка - наведення та запуск
+    usage: /ballistic <target|launch|info|give|rocket>
+    aliases: [arty, bl]
+  coalition:
+    description: Коаліції - хто з ким на одному боці
+    usage: /coalition <create|add|kick|leave|disband|info>
+    aliases: [coa, side, союз]
+
+permissions:
+  bobsterdefence.coalition.use:
+    description: Створення коаліцій та керування ними
+    default: true
+  bobsterdefence.admin.break:
+    description: Ламати чужі установки й ППО руками
+    default: op
+  bobsterdefence.aa.give:
+    description: Видача установок ППО та перехоплювачів
+    default: op
+  bobsterdefence.ballistic.use:
+    description: Керування пусковою установкою
+    default: true
+  bobsterdefence.ballistic.give:
+    description: Видача установок через /ballistic give
+    default: op
+  bobsterdefence.drone.use:
+    description: Запуск FPV-дрона
+    default: true
+  bobsterdefence.drone.give:
+    description: Видача FPV-дрона через /ppo drone
+    default: op
+  bobsterdefence.use:
+    description: Доступ до /ppo та /ppo stats
+    default: true
+  bobsterdefence.top:
+    description: Доступ до /ppo top
+    default: true
+  bobsterdefence.stats.others:
+    description: Перегляд статистики інших гравців
+    default: op
+  bobsterdefence.reload:
+    description: Доступ до /ppo reload
+    default: op

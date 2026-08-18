@@ -1,0 +1,2776 @@
+# Технічне завдання
+
+## Модуль Strategic States для BobsterDefence
+
+### 1. Загальна концепція
+
+У плагін `BobsterDefence` необхідно інтегрувати систему автономних NPC-держав — `Strategic States`.
+
+Максимальна кількість одночасно існуючих стратегічних держав:
+
+**5 держав.**
+
+Кожна держава повинна являти собою повноцінну автономну систему з:
+
+* територією;
+* населенням;
+* економікою;
+* ресурсами;
+* житловим фондом;
+* виробництвом;
+* військом;
+* обороною;
+* технологічним розвитком;
+* будівництвом;
+* демографією;
+* стратегічним AI;
+* зовнішньою політикою;
+* наступальними операціями;
+* захопленням чужих територій;
+* обороною власних територій;
+* використанням озброєння BobsterDefence;
+* взаємодією з територіями `TerritoryMap-1.5.0.jar`.
+
+Базовим NPC населення є `Pillager`.
+
+Принцип:
+
+**State AI приймає стратегічні рішення, а окремі NPC виконують конкретні завдання.**
+
+NPC не повинні самостійно вирішувати глобальні питання на кшталт:
+
+* чи оголошувати війну;
+* що будувати;
+* куди запускати ракету;
+* скільки створювати солдатів;
+* яку територію захоплювати.
+
+Це відповідальність центрального AI держави.
+
+---
+
+# 2. Розміщення всередині BobsterDefence
+
+Система не повинна бути окремим плагіном.
+
+Вона реалізовується безпосередньо всередині:
+
+`BobsterDefence.jar`
+
+Орієнтовна структура:
+
+```text
+BobsterDefence
+│
+├── defence/
+├── missiles/
+├── drones/
+├── airdefence/
+├── explosions/
+│
+└── strategicstates/
+    │
+    ├── StrategicStateManager
+    ├── StrategicState
+    ├── StrategicStateRegistry
+    ├── StateSimulationEngine
+    ├── StateLifecycleManager
+    │
+    ├── ai/
+    │   ├── StateAI
+    │   ├── StateDecisionEngine
+    │   ├── EconomyAI
+    │   ├── ConstructionAI
+    │   ├── MilitaryAI
+    │   ├── DefenceAI
+    │   ├── ExpansionAI
+    │   ├── TargetSelectionAI
+    │   └── DiplomacyAI
+    │
+    ├── population/
+    │   ├── StateCitizen
+    │   ├── CitizenManager
+    │   ├── ProfessionManager
+    │   └── PopulationSimulation
+    │
+    ├── economy/
+    │   ├── StateEconomy
+    │   ├── ResourceStorage
+    │   ├── ProductionManager
+    │   └── ConsumptionManager
+    │
+    ├── construction/
+    │   ├── ConstructionManager
+    │   ├── BuildingTemplate
+    │   ├── BuildingInstance
+    │   ├── ConstructionQueue
+    │   └── VirtualConstructionManager
+    │
+    ├── territory/
+    │   ├── TerritoryMapHook
+    │   ├── StateTerritoryManager
+    │   ├── ControlPointManager
+    │   └── TerritorialFrontManager
+    │
+    ├── military/
+    │   ├── StateArmy
+    │   ├── MilitaryUnit
+    │   ├── WarManager
+    │   ├── BattleManager
+    │   ├── InvasionManager
+    │   └── DefenceManager
+    │
+    ├── weapons/
+    │   ├── StateWeaponManager
+    │   ├── StateMissileController
+    │   ├── StateDroneController
+    │   ├── StrategicTargetScanner
+    │   └── StrikePlanner
+    │
+    ├── persistence/
+    │   ├── StateRepository
+    │   ├── StateSerializer
+    │   └── StateSnapshot
+    │
+    └── commands/
+        └── StrategicStateCommand
+```
+
+---
+
+# 3. Ключовий принцип симуляції
+
+Завантажені Minecraft-чанки не повинні визначати, чи існує і розвивається держава.
+
+Необхідно мати два режими симуляції.
+
+## 3.1 Physical Simulation
+
+Використовується, коли територія держави прогружена гравцями.
+
+У цьому режимі реально існують:
+
+* Pillager;
+* будівельники;
+* солдати;
+* фермери;
+* патрулі;
+* техніка;
+* ракети;
+* дрони.
+
+NPC фізично:
+
+* переміщуються;
+* працюють;
+* будують;
+* воюють;
+* охороняють;
+* патрулюють;
+* виконують завдання.
+
+## 3.2 Virtual Simulation
+
+Якщо чанки держави не прогружені, розвиток держави **НЕ ЗУПИНЯЄТЬСЯ**.
+
+Замість фізичних NPC працює симулятор:
+
+```text
+StateSimulationEngine
+```
+
+Він повинен продовжувати:
+
+* виробництво ресурсів;
+* споживання ресурсів;
+* народжуваність;
+* смерть від голоду;
+* будівництво;
+* завершення заводів;
+* виробництво зброї;
+* формування армії;
+* дослідження;
+* відновлення після війни;
+* стратегічне планування.
+
+Наприклад:
+
+```text
+12:00
+
+Wood = 250
+Iron = 120
+Food = 400
+
+Farm #3 construction = 40%
+```
+
+Через 30 хвилин без жодного гравця поруч:
+
+```text
+12:30
+
+Wood = 410
+Iron = 184
+Food = 530
+
+Farm #3 construction = 100%
+Barracks #1 construction = 35%
+Population = 17
+```
+
+---
+
+# 4. Матеріалізація змін unloaded-чанків
+
+Важливо:
+
+Minecraft не повинен постійно тримати всю державу прогруженою тільки заради будівництва.
+
+Це створило б непотрібне навантаження.
+
+Тому необхідна система:
+
+```text
+Virtual World Changes
+```
+
+Приклад.
+
+AI вирішив:
+
+```text
+BUILD barracks_01
+```
+
+Будівля повинна знаходитися:
+
+```text
+X: 1520
+Y: 71
+Z: -440
+```
+
+Чанк не прогружений.
+
+У такому випадку записується:
+
+```text
+VirtualBuilding
+{
+    stateId
+    template
+    location
+    rotation
+    constructionStarted
+    constructionFinished
+    materialized = false
+}
+```
+
+Держава вважає казарму побудованою після завершення її virtual construction.
+
+Але фізично блоки ще можуть не знаходитися у світі.
+
+Коли відповідний чанк буде завантажено:
+
+```text
+ChunkLoadEvent
+```
+
+`VirtualConstructionManager` перевіряє:
+
+```text
+чи є тут pending world changes?
+```
+
+Якщо є:
+
+```text
+materialize()
+```
+
+і будівля вставляється у світ.
+
+Таким чином:
+
+**держава будується навіть у повністю unloaded області.**
+
+---
+
+# 5. Допустима короткочасна примусова загрузка
+
+Для важливих операцій можна допустити короткочасне завантаження конкретних чанків самим плагіном.
+
+Наприклад:
+
+* необхідно фізично вставити схему;
+* необхідно виконати вибух;
+* починається реальна битва;
+* летить ракета;
+* необхідно оновити блоки.
+
+Але категорично заборонено тримати:
+
+```text
+всю державу
++
+всі її дороги
++
+всю територію війни
+```
+
+постійно loaded.
+
+---
+
+# 6. State Core
+
+Держава створюється спеціальним блоком Bedrock.
+
+Команда:
+
+```text
+/bd state core give
+```
+
+або:
+
+```text
+/bd state createitem
+```
+
+Предмет:
+
+```text
+BEDROCK
+
+Strategic State Core
+```
+
+PDC:
+
+```text
+bobsterdefence:item_type = state_core
+```
+
+Після встановлення:
+
+```text
+StrategicStateManager.createState(...)
+```
+
+створюється нова держава.
+
+---
+
+# 7. Початковий стан
+
+Нова держава отримує:
+
+```text
+Population: 4-6
+Level: 1
+Food: початковий запас
+Wood: мінімальний запас
+Stone: мінімальний запас
+Iron: 0
+Weapons: базові
+Territory: стартова зона
+```
+
+Спавняються:
+
+```text
+4-6 Pillager
+```
+
+Початкові професії:
+
+```text
+2 Worker
+1 Lumberjack
+1 Farmer
+0-2 інші
+```
+
+---
+
+# 8. Ідентичність держави
+
+Кожна держава повинна мати:
+
+```text
+UUID
+Name
+ShortName
+Color
+CapitalLocation
+CoreLocation
+CreationTime
+Personality
+DevelopmentLevel
+```
+
+Приклад:
+
+```text
+UUID: ...
+Name: Iron Dominion
+Color: RED
+Capital: X=1400 Z=-300
+```
+
+---
+
+# 9. Візуальна відмінність
+
+Передбачити максимум 5 стандартних кольорів:
+
+```text
+RED
+BLUE
+GREEN
+YELLOW
+PURPLE
+```
+
+NPC різних держав повинні легко відрізнятися.
+
+Варіанти:
+
+* кольорова шкіряна броня;
+* кольорові банери;
+* кольорові name tags;
+* державні прапори біля будівель;
+* кольорові particles у спеціальних випадках.
+
+Приклад:
+
+```text
+[Iron Dominion]
+Soldier
+```
+
+---
+
+# 10. Personality держав
+
+Кожна держава при створенні отримує набір коефіцієнтів:
+
+```text
+aggression
+economyFocus
+technologyFocus
+defenceFocus
+expansionFocus
+populationFocus
+```
+
+Діапазон:
+
+```text
+0-100
+```
+
+Наприклад:
+
+```text
+State A
+
+Aggression: 85
+Economy: 35
+Technology: 70
+Defence: 25
+Expansion: 90
+```
+
+State A частіше атакує.
+
+Інша:
+
+```text
+Aggression: 25
+Economy: 90
+Technology: 75
+Defence: 95
+Expansion: 20
+```
+
+буде будувати сильну економіку та оборону.
+
+---
+
+# 11. Населення
+
+Кожен житель має:
+
+```text
+UUID
+State UUID
+Profession
+Age
+CombatExperience
+HomeBuilding
+WorkBuilding
+Health
+CurrentTask
+```
+
+При фізичному існуванні UUID держави та професія повинні дублюватися у PDC entity.
+
+Paper PDC дозволяє зберігати власні дані безпосередньо на Entity.
+
+---
+
+# 12. Професії
+
+Передбачити:
+
+```text
+Worker
+Lumberjack
+Miner
+Farmer
+Builder
+Engineer
+Soldier
+Crossbowman
+Guard
+Commander
+DroneOperator
+MissileOperator
+AirDefenceOperator
+```
+
+---
+
+# 13. Демографія
+
+Держава повинна мати модель приросту населення.
+
+Основні параметри:
+
+```text
+population
+housingCapacity
+foodReserve
+foodProduction
+stability
+warState
+```
+
+Новий житель може з'явитися тільки якщо:
+
+```text
+population < housingCapacity
+foodReserve > minimumFoodReserve
+stability > minimumStability
+```
+
+Темп приросту залежить від:
+
+```text
+food
+housing
+stability
+developmentLevel
+war
+```
+
+---
+
+# 14. Економіка
+
+Базові ресурси:
+
+```text
+WOOD
+STONE
+IRON
+COAL
+FOOD
+GUNPOWDER
+REDSTONE
+FUEL
+ADVANCED_COMPONENTS
+```
+
+Додатково:
+
+```text
+ENERGY
+```
+
+якщо надалі знадобиться для заводів.
+
+---
+
+# 15. Виробництво
+
+При unloaded-чанках ресурси виробляються математично.
+
+Наприклад:
+
+```text
+Farm:
+
++12 Food / minute
+```
+
+```text
+Mine:
+
++4 Stone / minute
++1.3 Iron / minute
++1 Coal / minute
+```
+
+```text
+Lumber Camp:
+
++8 Wood / minute
+```
+
+---
+
+# 16. Фізична симуляція виробництва
+
+Якщо гравець знаходиться поруч:
+
+* фермер ходить по фермі;
+* лісоруб рубає дерева;
+* будівельник працює;
+* шахтар заходить у шахту;
+* робітники переносять матеріали.
+
+Реальна економічна математика при цьому все одно контролюється:
+
+```text
+StateEconomy
+```
+
+а не кількістю фізично зрубаних блоків.
+
+---
+
+# 17. Будівлі
+
+Основні типи:
+
+```text
+House
+Farm
+Warehouse
+LumberCamp
+Mine
+Workshop
+Barracks
+Wall
+GuardTower
+MilitaryFactory
+DroneFactory
+MissileFactory
+AirDefenceSite
+CommandCenter
+```
+
+---
+
+# 18. Шаблони будівель
+
+Необхідно використовувати готові шаблони.
+
+Наприклад:
+
+```text
+plugins/BobsterDefence/states/schematics/
+```
+
+Структура:
+
+```text
+house_01.schem
+house_02.schem
+farm_01.schem
+warehouse_01.schem
+mine_01.schem
+barracks_01.schem
+factory_01.schem
+missile_factory_01.schem
+drone_factory_01.schem
+air_defence_01.schem
+```
+
+---
+
+# 19. Вибір місця будівництва
+
+`ConstructionAI` повинен:
+
+1. знайти область біля існуючого поселення;
+2. перевірити висоту;
+3. перевірити нахил;
+4. перевірити воду;
+5. перевірити існуючі споруди;
+6. перевірити TerritoryMap;
+7. знайти вільну площу;
+8. визначити rotation;
+9. створити `BuildingInstance`.
+
+---
+
+# 20. Будівництво при loaded-чанках
+
+Якщо гравець бачить процес:
+
+Builder NPC приходять на будівництво.
+
+Блоки з'являються поступово.
+
+Наприклад:
+
+```text
+4 blocks / second
+```
+
+або за конфігом.
+
+---
+
+# 21. Будівництво при unloaded-чанках
+
+Будівництво продовжується віртуально.
+
+Наприклад:
+
+```text
+14:00 = 20%
+14:10 = 45%
+14:20 = 75%
+14:30 = 100%
+```
+
+Після 100%:
+
+```text
+building.status = COMPLETE
+building.materialized = false
+```
+
+Після наступного завантаження чанку:
+
+```text
+materialized = true
+```
+
+---
+
+# 22. Рівні розвитку
+
+## Level 1 — Camp
+
+```text
+Population: 4-10
+```
+
+Доступно:
+
+```text
+House
+Farm
+Warehouse
+LumberCamp
+```
+
+## Level 2 — Settlement
+
+```text
+Population: 8-20
+```
+
+Відкривається:
+
+```text
+Mine
+Workshop
+GuardTower
+Basic Soldiers
+```
+
+## Level 3 — State
+
+```text
+Population: 15-35
+```
+
+Доступні:
+
+```text
+Barracks
+Army
+Walls
+Expansion
+Wars
+```
+
+## Level 4 — Industrial State
+
+Доступні:
+
+```text
+MilitaryFactory
+DroneFactory
+AirDefence
+AdvancedWeapons
+```
+
+## Level 5 — Strategic State
+
+Доступні:
+
+```text
+Ballistic missiles
+Strategic drones
+Large invasions
+Advanced air defence
+```
+
+---
+
+# 23. Взаємодія з TerritoryMap
+
+Необхідно реалізувати:
+
+```text
+TerritoryMapHook
+```
+
+BobsterDefence повинен отримувати:
+
+```text
+territoryId
+guildId
+guildName
+world
+polygon/regions
+owner
+```
+
+Конкретний механізм hook залежить від того, який API фактично експортує `TerritoryMap-1.5.0.jar`.
+
+Якщо прямого API немає, реалізувати адаптер через:
+
+* Bukkit services;
+* events;
+* reflection;
+* або винести невеликий API у TerritoryMap.
+
+StrategicStates не повинен напряму розкидати виклики TerritoryMap по всьому коду.
+
+Уся взаємодія повинна проходити через:
+
+```text
+TerritoryMapHook
+```
+
+---
+
+# 24. Глобальне керування війною
+
+Необхідно окремо розділити:
+
+```text
+States enabled
+```
+
+та:
+
+```text
+Attacks enabled
+```
+
+Наприклад держави можуть продовжувати:
+
+* працювати;
+* народжуватися;
+* будуватися;
+* виробляти зброю;
+* оборонятися;
+
+але не починати наступальних операцій.
+
+Команда:
+
+```text
+/bd states attacks on
+```
+
+та:
+
+```text
+/bd states attacks off
+```
+
+---
+
+# 25. Поведінка attacks off
+
+Після:
+
+```text
+/bd states attacks off
+```
+
+забороняється:
+
+```text
+DeclareWar
+StartInvasion
+LaunchOffensiveMissile
+LaunchOffensiveDrone
+CaptureEnemyPoint
+```
+
+Але дозволяється:
+
+```text
+Economy
+Construction
+Population
+Research
+Production
+Patrol
+Defence
+```
+
+---
+
+# 26. Активна атака в момент вимкнення
+
+Якщо адміністратор вводить:
+
+```text
+/bd states attacks off
+```
+
+коли напад уже триває, рекомендується режим:
+
+```text
+immediate ceasefire
+```
+
+Тобто:
+
+* нові ракети не запускаються;
+* дрони наступального типу повертаються/видаляються;
+* війська припиняють просування;
+* захоплення контрольних точок зупиняється;
+* штурмові загони переходять у стан `RETREAT`;
+* вже запущені ракети бажано не телепортувати назад, але їх можна або дозволити завершити політ, або видалити відповідно до конфігу.
+
+Конфіг:
+
+```yaml
+strategic-states:
+  attacks:
+    on-disable:
+      cancel-active-invasions: true
+      cancel-active-drones: true
+      destroy-flying-missiles: false
+      force-retreat: true
+```
+
+---
+
+# 27. Персистентність режиму
+
+Стан:
+
+```text
+attacksEnabled
+```
+
+обов'язково зберігати на диск.
+
+Після рестарту сервера:
+
+```text
+OFF
+```
+
+не повинен сам перетворитися на:
+
+```text
+ON
+```
+
+---
+
+# 28. Безпечне значення за замовчуванням
+
+Рекомендовано:
+
+```yaml
+attacks-enabled-on-first-start: false
+```
+
+Тобто адміністратор сам активує війни:
+
+```text
+/bd states attacks on
+```
+
+---
+
+# 29. Виключення окремих гільдій
+
+Необхідно мати список:
+
+```text
+Protected Guilds
+```
+
+Команда:
+
+```text
+/bd states guild exclude <guild>
+```
+
+Наприклад:
+
+```text
+/bd states guild exclude Kroll_Empire
+```
+
+Після цього жодна NPC-держава не має права:
+
+* оголошувати їй війну;
+* запускати ракети;
+* запускати дрони;
+* вторгатися;
+* захоплювати контрольні точки;
+* обстрілювати її територію.
+
+---
+
+# 30. Повернення гільдії
+
+```text
+/bd states guild include Kroll_Empire
+```
+
+---
+
+# 31. Список виключених
+
+```text
+/bd states guild excluded
+```
+
+Приклад:
+
+```text
+Protected guilds:
+
+- Kroll_Empire
+- Solaria
+```
+
+---
+
+# 32. Перевірка захищеної гільдії
+
+Перед будь-якою наступальною дією викликається:
+
+```java
+attackPolicy.canAttack(guildId)
+```
+
+Перевірка має бути централізованою.
+
+Не можна окремо перевіряти blacklist у MissileManager, DroneManager, WarManager тощо.
+
+Правильна схема:
+
+```text
+AttackPolicyManager
+```
+
+із методом:
+
+```text
+canAttackGuild()
+```
+
+---
+
+# 33. Захист уже під час війни
+
+Якщо:
+
+```text
+State A
+```
+
+вже атакує:
+
+```text
+Solaria
+```
+
+і адміністратор вводить:
+
+```text
+/bd states guild exclude Solaria
+```
+
+атака повинна негайно припинитися.
+
+Так само як при глобальному:
+
+```text
+attacks off
+```
+
+---
+
+# 34. Автоматичне нічне відключення
+
+Основною вимогою є команда.
+
+Але закласти можливість майбутнього scheduler:
+
+```yaml
+attack-schedule:
+  enabled: false
+```
+
+Наприклад:
+
+```text
+08:00-02:00 attacks ON
+02:00-08:00 attacks OFF
+```
+
+Це не обов'язково реалізовувати в першій версії, але архітектура не повинна цьому заважати.
+
+---
+
+# 35. Вибір ворога
+
+`TargetSelectionAI` отримує список усіх TerritoryMap guilds.
+
+Відкидає:
+
+```text
+excluded guilds
+```
+
+та всі недоступні цілі.
+
+Для решти рахується:
+
+```text
+AttackScore
+```
+
+---
+
+# 36. AttackScore
+
+Приблизні фактори:
+
+```text
+distance
+territorySize
+militaryStrength
+airDefenceStrength
+economicValue
+previousWars
+estimatedPlayerActivity
+borderDistance
+stateAggression
+stateArmyStrength
+```
+
+---
+
+# 37. Мінімальна готовність
+
+NPC-держава не повинна атакувати одразу після появи.
+
+Наприклад:
+
+```text
+minimum level = 3
+```
+
+і:
+
+```text
+readiness >= 80%
+```
+
+---
+
+# 38. War Readiness
+
+Приклад:
+
+```text
+Target: Solaria
+
+Army:
+17 / 20
+
+Food:
+620 / 500
+
+Missiles:
+2 / 2
+
+Drones:
+3 / 4
+
+Readiness:
+91%
+```
+
+При досягненні порогу:
+
+```text
+WarManager.startWar()
+```
+
+---
+
+# 39. Територіальна війна
+
+Територія TerritoryMap не повинна переходити NPC-державі одразу вся.
+
+Необхідна механіка:
+
+**секторального захоплення через контрольні точки.**
+
+---
+
+# 40. Поділ території
+
+Кожна територія TerritoryMap повинна логічно розбиватися на:
+
+```text
+Capture Sectors
+```
+
+Наприклад велика територія:
+
+```text
+Sector A
+Sector B
+Sector C
+Sector D
+Sector E
+Sector F
+```
+
+---
+
+# 41. Контрольні точки
+
+Кожен сектор має:
+
+```text
+ControlPoint
+```
+
+Наприклад координати:
+
+```text
+X: 150
+Z: -340
+```
+
+Контрольна точка може бути віртуальною.
+
+Не обов'язково ставити фізичний блок.
+
+Але для гравця її можна показувати:
+
+* particle;
+* bossbar;
+* hologram;
+* beacon;
+* marker.
+
+---
+
+# 42. Захоплення сектора
+
+NPC повинні зайти в radius:
+
+```text
+captureRadius
+```
+
+Наприклад:
+
+```text
+16 blocks
+```
+
+та утримувати його.
+
+Умовно:
+
+```text
+captureTime = 180 seconds
+```
+
+---
+
+# 43. Прогрес
+
+Наприклад:
+
+```text
+Sector B
+
+Owner: Kroll_Empire
+
+Attacker:
+Iron Dominion
+
+Capture:
+████████░░
+82%
+```
+
+---
+
+# 44. Контестація
+
+Якщо всередині точки одночасно:
+
+```text
+NPC attackers
++
+players/defenders
+```
+
+точка переходить:
+
+```text
+CONTESTED
+```
+
+Прогрес зупиняється.
+
+---
+
+# 45. Втрата атакуючих
+
+Якщо атакуючі залишили точку:
+
+```text
+captureProgress
+```
+
+може:
+
+* повільно падати;
+* або залишатися певний час.
+
+Рекомендовано:
+
+```text
+gracePeriod = 30 sec
+decay = 2% / sec
+```
+
+---
+
+# 46. Передача сектора
+
+Після:
+
+```text
+100%
+```
+
+Sector переходить до стратегічної держави.
+
+Але решта території залишається у попереднього власника.
+
+Приклад:
+
+```text
+Territory = Solaria
+
+Sector A = NPC
+Sector B = NPC
+Sector C = Solaria
+Sector D = Solaria
+Sector E = Solaria
+```
+
+---
+
+# 47. Лінія фронту
+
+`TerritorialFrontManager` визначає:
+
+```text
+NPC controlled sectors
+Enemy controlled sectors
+Adjacent sectors
+```
+
+NPC атакують переважно сусідні сектори.
+
+Не повинно бути ситуації:
+
+```text
+A captured
+B enemy
+C enemy
+D suddenly captured
+```
+
+без фізичного проходження фронту.
+
+---
+
+# 48. Повний захват
+
+Тільки коли:
+
+```text
+all sectors == StrategicState
+```
+
+територія вважається повністю захопленою.
+
+---
+
+# 49. Інтеграція з TerritoryMap
+
+Якщо TerritoryMap підтримує часткові полігони:
+
+при захопленні сектора змінюється polygon ownership.
+
+Якщо TerritoryMap підтримує тільки одну територію = один owner:
+
+BobsterDefence повинен вести власний internal overlay:
+
+```text
+SectorOwnership
+```
+
+а TerritoryMap отримує повного нового власника тільки після:
+
+```text
+100% territory captured
+```
+
+---
+
+# 50. Відвоювання
+
+Гравці повинні мати можливість відбити сектор назад.
+
+Той самий механізм працює у зворотний бік.
+
+---
+
+# 51. Оборона власної держави NPC
+
+Strategic State повинна мати власні контрольні точки.
+
+При нападі гравців або іншої стратегічної держави:
+
+```text
+DefenceAI
+```
+
+повинен:
+
+* збирати війська;
+* посилювати фронт;
+* підтягувати резерв;
+* запускати оборонні дрони;
+* активувати ППО;
+* перерозподіляти ресурси.
+
+---
+
+# 52. Знищення держави
+
+Основна умова:
+
+```text
+livingPopulation == 0
+```
+
+Держава знищена.
+
+Після цього:
+
+```text
+state.status = DESTROYED
+```
+
+---
+
+# 53. State Core
+
+Core не повинен автоматично означати миттєве знищення держави, якщо твоєю основною умовою є смерть усіх жителів.
+
+Але його можна зробити стратегічно важливим.
+
+Наприклад після руйнування Core:
+
+```text
+-50% stability
+-50% production
+new population disabled
+command functions disabled
+```
+
+поки Core не буде відновлено.
+
+---
+
+# 54. Міждержавні війни
+
+Strategic States повинні мати право атакувати:
+
+```text
+Player Guilds
+Strategic States
+```
+
+Але це можна зробити двома окремими flags:
+
+```yaml
+allow-state-vs-player: true
+allow-state-vs-state: true
+```
+
+---
+
+# 55. BobsterDefence Weapon Integration
+
+NPC не повинні мати окрему імітовану систему ракет.
+
+Необхідно використовувати існуючі механіки:
+
+```text
+MissileManager
+DroneManager
+AirDefenceManager
+```
+
+через внутрішній API BobsterDefence.
+
+---
+
+# 56. Виробництво ракет
+
+Наприклад:
+
+```text
+Ballistic Missile
+```
+
+потребує:
+
+```text
+Iron
+Gunpowder
+Fuel
+Redstone
+AdvancedComponents
+```
+
+Після виробництва:
+
+```text
+StateArsenal.ballisticMissiles++
+```
+
+---
+
+# 57. Реальний запуск
+
+Коли `MilitaryAI` вирішує провести удар:
+
+```text
+StateMissileController.launch()
+```
+
+повинен викликати той самий pipeline, який використовується гравцем.
+
+Таким чином:
+
+* ракета реально летить;
+* її бачать гравці;
+* працюють particles;
+* працює flame trail;
+* її може збити ППО;
+* діють звичайні механіки BobsterDefence.
+
+---
+
+# 58. Вибір цілей для ракет
+
+Це одна з основних вимог.
+
+NPC повинні мати пріоритет:
+
+**кам'яні споруди на території ворожої гільдії.**
+
+---
+
+# 59. StrategicTargetScanner
+
+Реалізувати:
+
+```text
+StrategicTargetScanner
+```
+
+Його задача:
+
+знайти потенційні штучні споруди всередині території.
+
+---
+
+# 60. Цільові матеріали
+
+Конфіг:
+
+```yaml
+strategic-targeting:
+  priority-materials:
+    - STONE
+    - STONE_BRICKS
+    - CRACKED_STONE_BRICKS
+    - MOSSY_STONE_BRICKS
+    - DEEPSLATE
+    - POLISHED_DEEPSLATE
+    - DEEPSLATE_BRICKS
+    - COBBLESTONE
+    - SMOOTH_STONE
+```
+
+За необхідності список розширюється.
+
+---
+
+# 61. Визначення споруди
+
+Не можна вважати:
+
+```text
+один блок STONE
+```
+
+заводом.
+
+Потрібно визначати `structure cluster`.
+
+Наприклад scanner знаходить групу штучних блоків:
+
+```text
+cluster > 80 priority blocks
+```
+
+у заданому радіусі.
+
+---
+
+# 62. StructureScore
+
+Для кожного знайденого cluster:
+
+```text
+StoneBlockCount
+Density
+Height
+Volume
+Containers
+Redstone
+Machines
+Distance
+PreviousHits
+```
+
+рахується:
+
+```text
+StructureScore
+```
+
+---
+
+# 63. Першочергові цілі
+
+Приклад:
+
+```text
+Target #1
+
+Stone blocks: 720
+Redstone blocks: 42
+Containers: 16
+Volume: HIGH
+
+Score: 91
+```
+
+```text
+Target #2
+
+Stone blocks: 140
+Redstone: 0
+
+Score: 36
+```
+
+ракета обирає Target #1.
+
+---
+
+# 64. Кешування споруд
+
+Сканувати мільйони блоків перед кожним запуском заборонено.
+
+Необхідний:
+
+```text
+StrategicStructureCache
+```
+
+Сканування робиться:
+
+* при першому аналізі території;
+* частинами;
+* після істотних змін;
+* періодично;
+* перед великими війнами.
+
+---
+
+# 65. Сканування unloaded території
+
+Не потрібно примусово вантажити всю територію кожного разу.
+
+Можливі два режими:
+
+```text
+knownTargets
+```
+
+і:
+
+```text
+unknownArea
+```
+
+Для unloaded-частини використовувати останній відомий cache.
+
+---
+
+# 66. Якщо споруд немає
+
+Якщо:
+
+```text
+priorityTargets.isEmpty()
+```
+
+вибирається:
+
+```text
+random point inside enemy controlled territory
+```
+
+---
+
+# 67. Захист від безглуздих точок
+
+Random target не повинен знаходитися:
+
+* поза територією;
+* у void;
+* далеко в океані, якщо є суша;
+* у protected area;
+* у excluded guild;
+* в уже захопленому NPC секторі.
+
+---
+
+# 68. Target priority
+
+Рекомендований порядок:
+
+```text
+1. Missile/Drone infrastructure
+2. Air Defence
+3. Large stone industrial-looking structures
+4. Warehouses / concentrated artificial structures
+5. Other artificial structures
+6. Random enemy territory point
+```
+
+---
+
+# 69. Важлива вимога
+
+Targeting AI не повинен “знати”, що конкретний будинок — завод, якщо BobsterDefence або TerritoryMap не містять такого metadata.
+
+Він лише робить heuristic:
+
+```text
+велика штучна кам'яна споруда = потенційно важливий об'єкт
+```
+
+---
+
+# 70. Дрони
+
+Дрони використовують той самий `StrategicTargetScanner`.
+
+Але отримують свої задачі:
+
+```text
+RECON
+STRIKE
+SUPPORT
+```
+
+---
+
+# 71. Recon Drone
+
+Перед великим нападом AI може:
+
+```text
+launch recon drone
+```
+
+Результат:
+
+* уточнення structure cache;
+* ППО;
+* великих споруд;
+* потенційних маршрутів.
+
+---
+
+# 72. Strike Drone
+
+Пріоритет:
+
+```text
+smaller strategic structures
+air defence
+isolated buildings
+frontline positions
+```
+
+---
+
+# 73. Ракети
+
+Пріоритет:
+
+```text
+large strategic structures
+large stone clusters
+military infrastructure
+```
+
+---
+
+# 74. Friendly fire
+
+Перед ударом BobsterDefence перевіряє:
+
+```text
+target sector owner
+```
+
+Якщо сектор уже захоплений тією ж Strategic State:
+
+удар скасовується.
+
+---
+
+# 75. Excluded Guild safety
+
+Перед фактичним launch:
+
+```text
+AttackPolicyManager.canAttack(targetGuild)
+```
+
+перевіряється ще раз.
+
+Тобто навіть якщо WarPlan був створений раніше, але за 10 секунд до пуску адмін виключив гільдію:
+
+```text
+launch = CANCELLED
+```
+
+---
+
+# 76. Військовий AI
+
+Ввести стани:
+
+```text
+PEACE
+PREPARING
+MOBILIZING
+ATTACKING
+DEFENDING
+RETREATING
+RECOVERING
+```
+
+---
+
+# 77. Підготовка
+
+`PREPARING`:
+
+```text
+produce weapons
+produce food
+recruit soldiers
+build equipment
+select targets
+```
+
+---
+
+# 78. Mobilizing
+
+NPC збираються:
+
+```text
+RallyPoint
+```
+
+біля кордону.
+
+---
+
+# 79. Strategic strike
+
+Якщо є відповідна зброя:
+
+```text
+Recon
+Missile strike
+Drone strike
+```
+
+---
+
+# 80. Ground invasion
+
+Після ударів:
+
+```text
+ATTACKING
+```
+
+Військо рухається до:
+
+```text
+nearest enemy ControlPoint
+```
+
+---
+
+# 81. Pathfinding
+
+Для фізично прогружених мобів використовувати Paper Mob Goal API/custom goals для власних задач пересування та поведінки. Paper API дозволяє додавати і прибирати цілі мобів та створювати власні goals.
+
+---
+
+# 82. Довгі маршрути
+
+Категорично не потрібно будувати pathfinding:
+
+```text
+на 3000 блоків
+```
+
+одним запитом.
+
+Маршрут ділиться на:
+
+```text
+Strategic Waypoints
+```
+
+Наприклад:
+
+```text
+Waypoint 1
+Waypoint 2
+Waypoint 3
+Frontline
+ControlPoint
+```
+
+---
+
+# 83. Unloaded movement
+
+Якщо армія рухається через unloaded область:
+
+її позиція оновлюється віртуально:
+
+```text
+virtualArmyPosition
+```
+
+Наприклад:
+
+```text
+speed = 80 blocks/min
+```
+
+---
+
+# 84. Матеріалізація армії
+
+Коли гравець прогружає район:
+
+```text
+VirtualArmy
+```
+
+перетворюється на фізичних Pillager приблизно у поточній simulated location.
+
+---
+
+# 85. Заборона телепортації перед очима
+
+Якщо гравець бачить армію:
+
+virtualization не використовується.
+
+NPC повинні реально пройти маршрут.
+
+---
+
+# 86. Загибель NPC
+
+При смерті фізичного NPC:
+
+```text
+CitizenManager.killCitizen(UUID)
+```
+
+Population зменшується.
+
+NPC не повинен респавнитися тільки через unload/reload chunk.
+
+---
+
+# 87. Збереження даних
+
+Необхідно регулярно зберігати:
+
+```text
+states
+citizens
+economy
+buildings
+wars
+sectors
+arsenal
+settings
+```
+
+---
+
+# 88. Формат
+
+Для першої версії допустимо:
+
+```text
+YAML/JSON
+```
+
+але через обсяг системи рекомендовано:
+
+```text
+SQLite
+```
+
+---
+
+# 89. Орієнтовні таблиці
+
+```text
+states
+citizens
+buildings
+resources
+wars
+capture_sectors
+state_arsenal
+state_relations
+state_events
+```
+
+---
+
+# 90. Періодична симуляція
+
+Наприклад:
+
+```text
+Fast Tick:
+1 second
+```
+
+Тільки:
+
+* активні війни;
+* capture points;
+* важливі дії.
+
+```text
+State Tick:
+10 seconds
+```
+
+* AI;
+* economy;
+* tasks.
+
+```text
+Slow Tick:
+60 seconds
+```
+
+* population;
+* diplomacy;
+* strategic evaluation.
+
+---
+
+# 91. Асинхронність
+
+Математичні розрахунки:
+
+* target scoring;
+* economy;
+* AI decisions;
+* database work;
+
+по можливості виконувати поза Minecraft main thread.
+
+Але Bukkit/Paper world API не викликати довільно з async thread.
+
+Paper має scheduler-механізми для відкладених/повторних задач, а також окремий async scheduler у сучасному API.
+
+---
+
+# 92. Команди
+
+Коренева:
+
+```text
+/bd states
+```
+
+---
+
+## Загальне
+
+```text
+/bd states list
+/bd states info <state>
+/bd states reload
+```
+
+---
+
+## Створення
+
+```text
+/bd states core give
+```
+
+---
+
+## Атаки
+
+```text
+/bd states attacks on
+/bd states attacks off
+/bd states attacks status
+```
+
+---
+
+## Guild protection
+
+```text
+/bd states guild exclude <guild>
+/bd states guild include <guild>
+/bd states guild excluded
+```
+
+---
+
+## Адмін-команди
+
+```text
+/bd states forcelevel <state> <1-5>
+
+/bd states addresource <state> <resource> <amount>
+
+/bd states population <state> set <amount>
+
+/bd states war <state> <guild>
+
+/bd states peace <state>
+
+/bd states destroy <state>
+```
+
+---
+
+# 93. Permissions
+
+```text
+bobsterdefence.states.admin
+bobsterdefence.states.create
+bobsterdefence.states.attacks
+bobsterdefence.states.guildprotection
+bobsterdefence.states.debug
+```
+
+---
+
+# 94. Debug
+
+```text
+/bd states debug <state>
+```
+
+Показує:
+
+```text
+State
+Level
+Population
+Food
+Resources
+Buildings
+Army
+Current AI state
+Current target
+War readiness
+Active war
+Simulation mode
+Virtual units
+Pending buildings
+```
+
+---
+
+# 95. Логи подій
+
+Створити:
+
+```text
+plugins/BobsterDefence/logs/states.log
+```
+
+Приклад:
+
+```text
+[14:12] Iron Dominion created.
+[14:47] Farm completed.
+[15:08] Population increased: 7 -> 8.
+[16:31] Barracks completed.
+[17:02] War preparation started against Solaria.
+[17:24] Ballistic missile produced.
+[17:42] War declared: Iron Dominion -> Solaria.
+[17:44] Missile launched at strategic structure.
+[17:47] Sector SOLARIA_04 contested.
+[17:51] Sector SOLARIA_04 captured.
+```
+
+---
+
+# 96. Конфіг
+
+Орієнтовно:
+
+```yaml
+strategic-states:
+
+  enabled: true
+
+  max-states: 5
+
+  attacks:
+    enabled: false
+
+    on-disable:
+      cancel-active-invasions: true
+      cancel-active-drones: true
+      destroy-flying-missiles: false
+      force-retreat: true
+
+  simulation:
+    state-tick-seconds: 10
+    economy-tick-seconds: 30
+    population-tick-seconds: 60
+
+    virtual-simulation: true
+
+  population:
+    starting-min: 4
+    starting-max: 6
+    max-per-state: 50
+
+  capture:
+    sector-size: 64
+    capture-radius: 16
+    capture-time-seconds: 180
+    grace-period-seconds: 30
+    decay-per-second: 2.0
+
+  war:
+    minimum-state-level: 3
+    minimum-readiness: 0.80
+
+  strategic-targeting:
+
+    priority-materials:
+      - STONE
+      - STONE_BRICKS
+      - DEEPSLATE
+      - DEEPSLATE_BRICKS
+      - COBBLESTONE
+      - SMOOTH_STONE
+
+    minimum-cluster-size: 80
+
+    fallback-to-random-target: true
+
+  protected-guilds: []
+```
+
+---
+
+# 97. State machine
+
+Основний State AI:
+
+```text
+START
+  ↓
+DEVELOP
+  ↓
+CHECK ECONOMY
+  ↓
+CHECK POPULATION
+  ↓
+CHECK DEFENCE
+  ↓
+CHECK THREATS
+  ↓
+CHECK ATTACK POLICY
+  ↓
+SEARCH TARGET
+  ↓
+CALCULATE WAR READINESS
+  ↓
+PREPARE
+  ↓
+MOBILIZE
+  ↓
+STRATEGIC STRIKE
+  ↓
+GROUND ATTACK
+  ↓
+CAPTURE SECTOR
+  ↓
+ADVANCE FRONT
+  ↓
+CAPTURE NEXT SECTOR
+  ↓
+WAR FINISHED
+  ↓
+RECOVER
+  ↓
+DEVELOP
+```
+
+---
+
+# 98. AttackPolicy як обов'язковий центральний gate
+
+Усі наступальні операції повинні пройти:
+
+```text
+AttackPolicyManager
+```
+
+Псевдологіка:
+
+```java
+boolean canAttack(Guild guild) {
+
+    if (!strategicStatesEnabled)
+        return false;
+
+    if (!attacksEnabled)
+        return false;
+
+    if (excludedGuilds.contains(guild.getId()))
+        return false;
+
+    return true;
+}
+```
+
+Але перевірка здійснюється:
+
+1. при виборі ворога;
+2. при оголошенні війни;
+3. перед мобілізацією;
+4. перед заходом у сектор;
+5. перед стартом захвату;
+6. перед запуском дрона;
+7. перед запуском ракети.
+
+Це захищає від race conditions та зміни адміном конфігурації під час активної війни.
+
+---
+
+# 99. Основна вимога до продуктивності
+
+Не допустити:
+
+```text
+250 Pillager
+```
+
+з активним складним AI 24/7.
+
+Рекомендований принцип:
+
+```text
+DATA = TRUE STATE
+ENTITY = VISUAL REPRESENTATION
+```
+
+Тобто:
+
+```text
+StrategicState
+```
+
+є правдою.
+
+Pillager лише представляє Citizen, коли ця частина світу фізично симулюється.
+
+---
+
+# 100. Відновлення після рестарту
+
+Після старту сервера:
+
+```text
+BobsterDefence loads states
+↓
+loads buildings
+↓
+loads population
+↓
+loads wars
+↓
+loads sectors
+↓
+calculates offline elapsed time
+```
+
+Опціонально можна симулювати час, коли сервер був вимкнений.
+
+Але рекомендовано:
+
+```text
+server offline = world frozen
+```
+
+Тобто якщо сервер був вимкнений 8 годин, держави не отримують безкоштовно 8 годин економіки.
+
+---
+
+# 101. Вимоги до першої версії
+
+Розробку необхідно розділити на етапи.
+
+## Phase 1
+
+State Core.
+
+State creation.
+
+State persistence.
+
+Population.
+
+Basic NPC ownership.
+
+Virtual simulation.
+
+---
+
+## Phase 2
+
+Resources.
+
+Economy.
+
+Farms.
+
+Housing.
+
+Population growth.
+
+---
+
+## Phase 3
+
+Construction.
+
+Schematics.
+
+Virtual construction.
+
+Chunk materialization.
+
+---
+
+## Phase 4
+
+Professions.
+
+Physical NPC tasks.
+
+Custom pathfinding.
+
+---
+
+## Phase 5
+
+TerritoryMap integration.
+
+Capture sectors.
+
+Control points.
+
+Front line.
+
+---
+
+## Phase 6
+
+Army.
+
+Wars.
+
+Defence.
+
+Virtual army movement.
+
+---
+
+## Phase 7
+
+BobsterDefence weapons.
+
+Missiles.
+
+Drones.
+
+Air defence.
+
+---
+
+## Phase 8
+
+Strategic structure detection.
+
+Stone structure scanner.
+
+Target scoring.
+
+Strike planning.
+
+---
+
+## Phase 9
+
+State personalities.
+
+Diplomacy.
+
+State-vs-state wars.
+
+Balancing.
+
+---
+
+# 102. Критерії готовності
+
+Система вважається повністю реалізованою, якщо можна провести такий тест:
+
+1. Адміністратор ставить `State Core`.
+
+2. З'являються 4-6 Pillager.
+
+3. NPC починають початковий розвиток.
+
+4. Гравець залишає район.
+
+5. Чанки unload.
+
+6. Через 30 хвилин гравець повертається.
+
+7. Держава за цей час:
+
+   * накопичила ресурси;
+   * збільшила населення;
+   * завершила будівництво.
+
+8. Будівлі матеріалізуються у світі.
+
+9. Держава досягає Level 3+.
+
+10. `attacks = OFF`.
+
+11. Держава не атакує нікого.
+
+12. Адміністратор виконує:
+
+```text
+/bd states attacks on
+```
+
+13. Держава аналізує TerritoryMap.
+
+14. Protected guilds ігноруються.
+
+15. Обирається допустима гільдія.
+
+16. Держава готує армію.
+
+17. Скануються стратегічні споруди.
+
+18. Велика кам'яна споруда отримує підвищений TargetScore.
+
+19. Запускається реальна ракета BobsterDefence.
+
+20. Ракету може перехопити ППО BobsterDefence.
+
+21. NPC переходять у наземний наступ.
+
+22. Захоплюють першу контрольну точку.
+
+23. Переходить тільки один сектор TerritoryMap.
+
+24. Фронт просувається.
+
+25. Наступний сектор захоплюється окремо.
+
+26. Адміністратор виконує:
+
+```text
+/bd states attacks off
+```
+
+27. Наступ припиняється.
+
+28. Економіка NPC держави продовжує працювати.
+
+29. Адміністратор виконує:
+
+```text
+/bd states guild exclude Solaria
+```
+
+30. Solaria більше ніколи не обирається ціллю до виконання:
+
+```text
+/bd states guild include Solaria
+```
+
+---
+
+# 103. Головний архітектурний принцип
+
+Уся система повинна будуватися навколо трьох різних рівнів:
+
+```text
+STRATEGIC LAYER
+```
+
+Держава:
+
+* приймає рішення;
+* веде економіку;
+* планує;
+* воює;
+* керує територіями.
+
+```text
+SIMULATION LAYER
+```
+
+Обчислює:
+
+* ресурси;
+* населення;
+* production;
+* construction;
+* virtual movement;
+* війни.
+
+```text
+PHYSICAL LAYER
+```
+
+Minecraft:
+
+* Pillager;
+* блоки;
+* ракети;
+* дрони;
+* explosions;
+* particles;
+* actual combat.
+
+Головне правило:
+
+**Physical Layer ніколи не є джерелом існування держави.**
+
+Він лише візуалізує Strategic/Simulation Layer.
+
+Саме завдяки цьому Strategic State продовжуватиме жити, будуватися і розвиватися навіть тоді, коли жоден її чанк не завантажений.
