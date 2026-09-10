@@ -48,7 +48,7 @@ public class AaItem {
 
         Map<String, Object> placeholders = Map.of(
                 "range", tier.range(),
-                "zone", tier.range() * 2,
+                "zone", tier.zoneSize(),
                 "vertical", tier.verticalRange(),
                 "targets", tier.maxTargets(),
                 "cooldown", String.format("%.1f", tier.fireCooldown() / 20.0D),

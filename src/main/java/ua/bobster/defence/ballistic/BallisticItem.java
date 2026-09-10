@@ -8,6 +8,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import ua.bobster.defence.BobsterDefence;
+import ua.bobster.defence.missile.MissilePayload;
 import ua.bobster.defence.util.MessageUtil;
 
 import java.util.ArrayList;
@@ -39,13 +40,25 @@ public class BallisticItem {
      * належать саме ракеті — установка лише пускова труба, тому вони й виписані в її lore.
      */
     public ItemStack createRocket(LauncherTier tier, int amount) {
+        return createRocket(tier, amount, MissilePayload.explosive());
+    }
+
+    public ItemStack createRocket(LauncherTier tier, int amount, MissilePayload payload) {
+        return plugin.payloads().write(createRocketBase(tier, amount, plugin.payloads().powerText(payload, tier.explosionPower())), payload);
+    }
+
+    public ItemStack createLegacyRocket(LauncherTier tier, int amount) {
+        return createRocketBase(tier, amount, String.valueOf(tier.explosionPower()));
+    }
+
+    private ItemStack createRocketBase(LauncherTier tier, int amount, String power) {
         ItemStack item = new ItemStack(Material.FIREWORK_ROCKET, Math.max(1, Math.min(64, amount)));
         ItemMeta meta = item.getItemMeta();
         meta.displayName(MessageUtil.parse(tier.rocketName()).decoration(TextDecoration.ITALIC, false));
 
         Map<String, Object> placeholders = Map.of(
                 "range", tier.range(),
-                "power", tier.explosionPower(),
+                "power", power,
                 "hits", tier.hitsToIntercept(),
                 "cooldown", tier.cooldownSeconds(),
                 "speed", tier.speed(),

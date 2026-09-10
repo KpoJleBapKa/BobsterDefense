@@ -108,6 +108,12 @@ public class AirDefenceListener implements Listener {
                 .has(plugin.aa().interceptorKey(), org.bukkit.persistence.PersistentDataType.BYTE)) {
             return;
         }
+        if (plugin.ballistic() != null && plugin.ballistic().projectileOf(projectile) != null) {
+            return;
+        }
+        if (plugin.strike() != null && plugin.strike().isGuided(projectile)) {
+            return;
+        }
         if (!isAllowedProjectile(projectile)) {
             return;
         }
@@ -152,6 +158,19 @@ public class AirDefenceListener implements Listener {
      * @return true, якщо снаряд влучив саме в ракету
      */
     private boolean tryInterceptMissile(ProjectileHitEvent event, Projectile projectile, Entity hit) {
+        if (plugin.strike() != null && plugin.strike().isGuided(hit)) {
+            if (plugin.strike().isGuidedLaunchProtected(hit)) {
+                return false;
+            }
+            if (chancePercent < 100 && ThreadLocalRandom.current().nextInt(100) >= chancePercent) {
+                return true;
+            }
+            playEffects(hit.getLocation());
+            consumeProjectile(event, projectile);
+            rewardShooter(projectile, "intercept-missile-actionbar");
+            plugin.strike().intercept(hit);
+            return true;
+        }
         BallisticManager ballistic = plugin.ballistic();
         if (ballistic == null) {
             return false;
@@ -161,6 +180,10 @@ public class AirDefenceListener implements Listener {
         BallisticMissile missile = ballistic.missileByHitbox(hit);
         if (missile == null || missile.isEnding()) {
             return false;
+        }
+        if (!missile.interceptable()) {
+            consumeProjectile(event, projectile);
+            return true;
         }
         if (chancePercent < 100 && ThreadLocalRandom.current().nextInt(100) >= chancePercent) {
             return true;
@@ -196,8 +219,7 @@ public class AirDefenceListener implements Listener {
         if (drones == null) {
             return false;
         }
-        DroneSession session = drones.sessionByDrone(hit);
-        if (session == null || session.isEnding()) {
+        if (!drones.isDrone(hit)) {
             return false;
         }
         if (chancePercent < 100 && ThreadLocalRandom.current().nextInt(100) >= chancePercent) {
@@ -208,7 +230,7 @@ public class AirDefenceListener implements Listener {
         playEffects(hit.getLocation());
         rewardShooter(projectile, "intercept-drone-actionbar");
         consumeProjectile(event, projectile);
-        drones.end(session, DroneSession.EndReason.INTERCEPTED, shooter);
+        drones.intercept(hit, shooter);
         return true;
     }
 

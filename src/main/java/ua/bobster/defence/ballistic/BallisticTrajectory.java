@@ -89,6 +89,23 @@ public class BallisticTrajectory {
         return blocksPerTick / Math.max(1.0D, length);
     }
 
+    public double advanceFrom(double progress, double blocksPerTick) {
+        double t = Math.clamp(progress, 0.0D, 1.0D);
+        double inv = 1.0D - t;
+        Vector derivative = startControl.clone().subtract(start).multiply(3.0D * inv * inv);
+        derivative.add(targetControl.clone().subtract(startControl).multiply(6.0D * inv * t));
+        derivative.add(end.clone().subtract(targetControl).multiply(3.0D * t * t));
+        double delta = Math.min(1.0D - t, blocksPerTick / Math.max(1.0E-6D, derivative.length()));
+        if (delta <= 0.0D) {
+            return 0.0D;
+        }
+        double actual = pointAt(t).distance(pointAt(t + delta));
+        if (actual > 1.0E-6D) {
+            delta = Math.min(1.0D - t, delta * blocksPerTick / actual);
+        }
+        return delta;
+    }
+
     public double length() {
         return length;
     }

@@ -1,0 +1,1892 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Westeros Plugins — глобальний довідник</title>
+<style>
+  :root { --bg:#10140f; --panel:#192018; --panel2:#222b20; --text:#e8eadf; --muted:#aeb7a4; --line:#3a4735; --green:#a9c77f; --gold:#e4b66d; --red:#ef8c78; --mono:ui-monospace,Consolas,monospace; --sans:Inter,Segoe UI,Arial,sans-serif }
+  * { box-sizing:border-box }
+  html { scroll-behavior:smooth }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.65 var(--sans) }
+  a { color:var(--green) }
+  code,pre { font-family:var(--mono) }
+  code { color:#d5e8ba }
+  pre { padding:16px; overflow:auto; border:1px solid var(--line); border-radius:8px; background:#0b0e0a; color:#dce7d2 }
+  h1,h2,h3 { line-height:1.2; scroll-margin-top:24px }
+  h1 { margin:.2em 0; font-size:clamp(2.2rem,6vw,5rem) }
+  h2 { margin-top:2.4em; padding-bottom:.35em; border-bottom:1px solid var(--line); color:var(--gold) }
+  h3 { margin-top:1.8em; color:var(--green) }
+  table { width:100%; border-collapse:collapse; margin:1em 0 }
+  th,td { padding:10px 12px; border:1px solid var(--line); text-align:left; vertical-align:top }
+  th { background:var(--panel2) }
+  .layout { display:grid; grid-template-columns:280px minmax(0,1fr); max-width:1500px; margin:auto }
+  nav { position:sticky; top:0; align-self:start; height:100vh; overflow:auto; padding:24px; border-right:1px solid var(--line); background:#0c100c }
+  nav strong { display:block; margin-bottom:12px; color:var(--gold) }
+  nav a { display:block; padding:5px 0; color:var(--muted); text-decoration:none }
+  nav a:hover { color:var(--text) }
+  main { min-width:0; max-width:1100px; padding:50px clamp(20px,5vw,72px) 100px }
+  .lead { max-width:75ch; font-size:1.14rem; color:var(--muted) }
+  .badge { display:inline-block; margin:4px 5px 4px 0; padding:3px 8px; border:1px solid var(--line); border-radius:99px; background:var(--panel); color:var(--muted); font-size:.85rem }
+  .ok { color:var(--green) }
+  .future { color:var(--gold) }
+  .danger { color:var(--red) }
+  .card { margin:16px 0; padding:18px; border:1px solid var(--line); border-radius:10px; background:var(--panel) }
+  .news-meta { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px }
+  .news-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:12px }
+  .news-grid h3 { margin-top:0 }
+  .flow { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:18px 0 }
+  .flow span { padding:8px 12px; border:1px solid var(--line); border-radius:7px; background:var(--panel2) }
+  .flow b { color:var(--gold) }
+  #manual-content section { padding-top:20px }
+  #manual-content .sec-head, #command-catalog .sec-head { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; border-bottom:2px solid var(--green); padding-bottom:8px; margin:36px 0 24px }
+  #manual-content .sec-head h2, #command-catalog .sec-head h2 { margin:0; padding:0; border:0 }
+  #manual-content .tag, #command-catalog .tag { font:12px var(--mono); color:var(--muted); border:1px solid var(--line); padding:2px 8px; border-radius:2px }
+  #manual-content .stack, #command-catalog .stack { display:flex; flex-direction:column; gap:16px }
+  #manual-content .table-scroll, #command-catalog .table-scroll { overflow-x:auto; border:1px solid var(--line) }
+  #manual-content .crafts { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px }
+  #manual-content .craft { padding:14px; border:1px solid var(--line); background:var(--panel) }
+  #manual-content .craft-name { margin-bottom:12px; color:var(--gold); font:700 13px var(--mono); text-transform:uppercase }
+  #manual-content .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:2px }
+  #manual-content .cell { min-height:58px; padding:6px; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; text-align:center; font:11px/1.2 var(--mono) }
+  #manual-content .cell.empty { background:#0c100c }
+  #manual-content .cell.key { background:#302718; color:var(--gold); font-weight:700 }
+  #manual-content .craft-note { margin-top:10px; color:var(--muted); font:13px var(--mono) }
+  #manual-content .note, #command-catalog .note { padding:14px 18px; border-left:3px solid var(--green); background:var(--panel) }
+  #manual-content .note.warn, #command-catalog .note.warn { border-left-color:var(--gold) }
+  #manual-content .note-label, #command-catalog .note-label { display:block; margin-bottom:5px; color:var(--gold); font-size:12px; text-transform:uppercase }
+  #manual-content pre.figure, #command-catalog pre.figure { margin:0 }
+  #manual-content .keys { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:1px; border:1px solid var(--line) }
+  #manual-content .key-row { padding:12px 15px; display:flex; align-items:center; gap:12px; background:var(--panel) }
+  #manual-content .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:28px; align-items:start }
+  kbd { padding:2px 6px; border:1px solid var(--line); border-bottom-width:2px; border-radius:3px; background:var(--panel2); font-family:var(--mono) }
+  .small { color:var(--muted); font-size:.92rem }
+  @media (max-width:900px) { .layout { display:block } nav { position:relative; width:auto; height:auto; border-right:0; border-bottom:1px solid var(--line) } main { padding-top:32px } }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <strong>Глобальний довідник</strong>
+  <a href="#status">Статус і версії</a>
+  <a href="#news">News</a>
+  <a href="#install">Встановлення</a>
+  <a href="#architecture">Архітектура</a>
+  <a href="#field-manual">BobsterDefence: початок</a>
+  <a href="#manual-technology">Технології</a>
+  <a href="#manual-chest">Скрині</a>
+  <a href="#manual-manual">Ручне ППО</a>
+  <a href="#manual-drones">Дрони</a>
+  <a href="#manual-strike-launchers">Дронова й крилата зброя</a>
+  <a href="#manual-rockets">Ракети</a>
+  <a href="#manual-targeting">Наведення</a>
+  <a href="#manual-aa">Стаціонарне ППО</a>
+  <a href="#manual-coalition">Коаліції</a>
+  <a href="#manual-raid">Тривога</a>
+  <a href="#manual-war">Тактика</a>
+  <a href="#bobster">BobsterDefence</a>
+  <a href="#states">Strategic States</a>
+  <a href="#incoming">Удари по державах</a>
+  <a href="#territory">TerritoryMap</a>
+  <a href="#service-api">Service API</a>
+  <a href="#integration">Взаємодія плагінів</a>
+  <a href="#storage">Зберігання</a>
+  <a href="#config">Конфігурація</a>
+  <a href="#permissions">Права</a>
+  <a href="#operations">Експлуатація</a>
+  <a href="#roadmap">Готове й майбутнє</a>
+  <a href="#all-commands">Усі команди</a>
+</nav>
+<main>
+  <p class="small">Westeros plugin stack · Paper 1.21.1 · Java 21</p>
+  <h1>BobsterDefence<br>+ TerritoryMap</h1>
+  <p class="lead">Єдиний довідник з ігрової логіки, команд, даних, конфігів та інтеграційного контракту двох плагінів. Він описує поточну реалізацію; майбутні можливості позначені окремо.</p>
+
+  <h2 id="status">Статус і версії</h2>
+  <table>
+    <tr><th>Плагін</th><th>Версія</th><th>Роль</th></tr>
+    <tr><td>BobsterDefence</td><td><code>3.6.1</code></td><td>ППО, FPV-дрони, дронові та ракетні пускові, змінні ракетні навантаження, балістика, коаліції, повітряні тривоги та автономні Strategic States.</td></tr>
+    <tr><td>TerritoryMap</td><td><code>2.0.1-SNAPSHOT</code></td><td>Геометрія територій, власники, редагування жезлом, зберігання та BlueMap-маркери.</td></tr>
+  </table>
+  <p><span class="badge ok">Phase 0–2 готові</span><span class="badge ok">Player strikes готові</span><span class="badge ok">Construction/Wars/Capture готові</span><span class="badge ok">Autonomous strikes core готовий</span></p>
+
+  <h2 id="news">News</h2>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.6.1</span><span class="badge">26 серпня 2026</span><span class="badge">Ballistic launch fix</span></div>
+    <h3>Однакова швидкість виходу балістики з установки</h3>
+    <p>Старт балістичної ракети сповільнено до множника 0.2 і зроблено фіксованим завдовжки 8 блоків. На стартовій ділянці просування тепер обчислюється за локальною довжиною кривої, тому близька ціль більше не змушує ракету миттєво вистрибувати з установки, а далека — не змінює швидкість або тривалість її фізичного виходу. Після стартової фази ракета переходить до розгону з окремим множником 0.75.</p>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.6.0</span><span class="badge">26 серпня 2026</span><span class="badge">Missile payloads</span></div>
+    <h3>Порожні, TNT- і potion-ракети</h3>
+    <p>Усі чотири балістичні ракети, Corsair і Barrier тепер підтримують змінне корисне навантаження. Старий рецепт із TNT і старі предмети залишаються звичайними вибуховими ракетами. Та сама схема без TNT створює порожній корпус, який можна окремо зарядити TNT або будь-яким вибуховим зіллям.</p>
+    <p>Виправлено активну фазу Corsair і Barrier: двигун більше не пригальмовує ракету під час пікірування. Швидкість плавно зростає разом із кутом спуску максимум до 130% паспортної; горизонтальний політ залишається стабільним, а набір висоти коштує швидкості.</p>
+    <p>Potion-ракета переносить точний тип, рівень, тривалість і custom-ефекти зілля та при влучанні накриває область, радіус якої залежить від потужності корпусу. Порожня ракета не руйнує блоки: Trident лишається у точці удару, перші 15 секунд показує полум'я й дим двигуна, наступні 60 секунд — чорний дим, після чого зникає.</p>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.5.0</span><span class="badge">25 серпня 2026</span><span class="badge">Drone launcher groups</span></div>
+    <h3>Постійні номери дронових установок і польотний HUD</h3>
+    <p>Кожна поставлена гравцем Drone launch system отримує постійний номер. Команди <code>/drone launcher list</code>, <code>select none</code>, <code>select all</code> та <code>select 1 2 3</code> дають змогу керувати однією, кількома або всіма власними установками; вибір, координати й власники зберігаються в <code>drone-launchers.yml</code>. Зруйнований номер вивільняється, а старі вже встановлені пускові реєструються під час завантаження їхніх чанків.</p>
+    <p>Швидкість Corsair збільшено з 2.4 до 3.0 блока/тік, Barrier — з 2.8 до 3.6. Під час керованого польоту action bar показує залишок пального, фактично пройдену дистанцію та поточну швидкість. Балістичний політ не змінено.</p>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.4.0</span><span class="badge">24 серпня 2026</span><span class="badge">Guided flight core</span></div>
+    <h3>Нова фізика, пальне та окремий прогруз Corsair/Barrier</h3>
+    <p>Керована ракета більше не нормалізує вектор швидкості щотіку: підйомна сила, гравітація, інерційний поворот і пікірування зберігають накопичений напрямок, тому після вертикального набору висоти ракету можна плавно перевести вниз. Corsair має 15 секунд тяги, Barrier — 30; ліміту дальності немає, а після вичерпання пального ракета не вибухає, а переходить у безмоторне планерування.</p>
+    <p>Лише для Corsair і Barrier створюється суцільний прогнозований коридор чанків на три секунди вперед. Чанки завантажуються терміново, утримуються ticket-ами й завчасно надсилаються оператору; якщо клієнт ще не отримав наступну ділянку, швидкість плавно обмежується. Балістичний pipeline не змінено.</p>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.3.5</span><span class="badge">24 серпня 2026</span><span class="badge">Guided launch sequence fix</span></div>
+    <h3>Стабільна стартова фаза Corsair і Barrier</h3>
+    <p>Перші 0,5 секунди ракета виходить прямо за напрямком пускової, тому короткий поворот spectator-камери більше не направляє її назад у власну установку або землю. Перед списанням боєприпасу перевіряються 2,2 блока перед пусковою. Якщо ракета торкнулася перешкоди до завершення двосекундного зведення боєголовки, політ припиняється без вибуху.</p>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.3.4</span><span class="badge">24 серпня 2026</span><span class="badge">Guided launch protection</span></div>
+    <h3>Безпечний вихід керованої ракети з пускової</h3>
+    <p>Corsair і Barrier протягом перших двох секунд польоту не можуть бути перехоплені ручним або стаціонарним ППО та не детонують від зіткнення із живою сутністю біля установки. Зіткнення з твердим блоком залишається активним, тому ракета не проходить крізь закриту пускову, стіну або іншу перешкоду. Тривалість захисту задає <code>guided-missile.launch-protection-seconds</code>.</p>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.3.3</span><span class="badge">24 серпня 2026</span><span class="badge">Guided missile registry fix</span></div>
+    <h3>Видача Corsair і Barrier на старих конфігураціях</h3>
+    <p>Реєстр керованих ракет тепер завжди завантажує базові Corsair і Barrier із вбудованого config.yml JAR, після чого накладає серверні параметри. Тому команда <code>/rocket give &lt;corsair｜barrier&gt; [нік] [n]</code> працює навіть тоді, коли збережений config.yml був створений до появи секції <code>guided-missile.types</code>.</p>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.3.2</span><span class="badge">24 серпня 2026</span><span class="badge">Drone launch button cooldown</span></div>
+    <h3>Секундна перезарядка кнопки запуску дрона</h3>
+    <p>Кнопка «Пуск» у пульті Drone launch system після успішного запуску блокується на одну секунду. Кулдаун зберігається в самій установці, не витрачається на невдалу спробу й не поширюється на командний або редстоун-запуск.</p>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.3.1</span><span class="badge">24 серпня 2026</span><span class="badge">Ammo consumption fix</span></div>
+    <h3>Фізичне списання боєприпасів із нових пускових</h3>
+    <p>Drone launch system після успішного пуску тепер явно зменшує кількість дронів у конкретному слоті свого Dropper. Один завантажений дрон дає рівно один запуск. Такий самий механізм застосовано до Corsair і Barrier у Rocket launch system.</p>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.3.0</span><span class="badge">24 серпня 2026</span><span class="badge">Command routing &amp; launcher storage</span></div>
+    <h3>Окремі команди систем і надійні відсіки пускових</h3>
+    <p>Команди розподілено за призначенням: <code>/ppo</code> керує лише ППО, <code>/drone</code> — FPV-дронами та Drone launch system, <code>/ballistic</code> — балістикою, <code>/rocket</code> — камерою балістики й керованими Corsair/Barrier, <code>/coalition</code> — коаліціями, а <code>/bobster</code> — статистикою, технологіями, Strategic States і перезавантаженням.</p>
+    <p>Редстоун більше не дозволяє ванільному Dropper викидати дрон або керовану ракету. Клік по кнопці скрині в обох нових пультах відкриває фізичний відсік установки так само, як у балістичній пусковій. Команди видачі пускових і керованих ракет підтримують гравця та кількість.</p>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.2.3</span><span class="badge">24 серпня 2026</span><span class="badge">Cruise technologies</span></div>
+    <h3>Технології керованих крилатих ракет</h3>
+    <p>Додано книги Corsair і Barrier. Технологія Corsair відкриває рецепт універсальної Rocket launch system та ракети Corsair; технологія Barrier відкриває рецепт ракети Barrier. Без відповідного допуску результат у верстаку порожній, рецепт не відкривається у recipe book і не працює в автоматичному Crafter.</p>
+    <p>Потужність бойової частини Corsair зменшено з 6.0 до 5.0. Дальність 750 блоків, швидкість 2.4 та одне влучання для перехоплення залишилися без змін.</p>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.2.1</span><span class="badge">24 серпня 2026</span><span class="badge">Elytra flight</span></div>
+    <h3>Крилаті ракети керуються як ванільні елітри</h3>
+    <p>Corsair і Barrier більше не повертаються миттєво за курсором. Політ використовує ванільну elytra-модель: інерційне наведення за поглядом, підйомну силу, обмін горизонтальної швидкості на висоту та прискорення під час пікірування. Прибрано тільки пасивне гальмування, тому двигун зберігає паспортну швидкість ракети з уже передбаченими поправками на підйом і спуск.</p>
+    <p>Висоту маршруту Drone launch system, бічне розведення трьох коридорів і час повернення до центральної траєкторії винесено в <code>drone-launcher.trajectory</code> та можна застосувати через <code>/bobster reload</code>.</p>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.2.0</span><span class="badge">24 серпня 2026</span><span class="badge">Strike launch systems</span></div>
+    <h3>Автономні дронові удари та керовані крилаті ракети</h3>
+    <p>Додано універсальну <strong>Drone launch system</strong> для FP-1, P1-Sun і D1L-Duck. Вона зберігає ціль, приймає дрони у фізичний відсік і запускає їх автопілотом по плавній траєкторії з висотою 40 блоків над кінцевою точкою. Швидкий залп розводиться по лівому, центральному й правому коридорах; після паузи від двох секунд використовується центральний маршрут.</p>
+    <p>Нова <strong>Rocket launch system</strong> запускає Corsair і Barrier. Оператор одразу приєднується до корпусу ракети та керує курсом мишкою: горизонтальна швидкість не згасає, набір висоти сповільнює, а пікірування прискорює. Обидві установки мають вимкнений за замовчуванням запуск від редстоуну, захист власника та повертають весь боєзапас під час ламання.</p>
+    <div class="news-grid">
+      <div class="card"><h3>Corsair</h3><p>750 блоків, сила 5.0, швидкість 2.4 блока/тік, одне влучання ППО.</p></div>
+      <div class="card"><h3>Barrier</h3><p>1250 блоків, сила 7.0, швидкість 2.8 блока/тік, одне влучання ППО.</p></div>
+    </div>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.1.9</span><span class="badge">21 серпня 2026</span><span class="badge">Rocket camera</span></div>
+    <h3>Плавна камера власної ракети для всіх гравців</h3>
+    <p><code>/rocket</code> більше не перевіряє адміністративний permission і завжди шукає тільки ракети гравця, який виконав команду. Якщо їх декілька, обирається остання запущена. Камера тепер рухається разом із ракетою через пасажирський механізм Minecraft замість телепортації кожні два тіки, тому рух плавний, а огляд мишкою не перетягується сервером.</p>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.1.8</span><span class="badge">21 серпня 2026</span><span class="badge">Launcher selection UI</span></div>
+    <h3>Скидання вибору та гарантований номер у пульті</h3>
+    <p><code>/ballistic select none</code> очищує збережений груповий вибір і останню клікнуту установку. Постійний номер установки тепер примусово додається до заголовка пульта та до статусу, навіть якщо сервер використовує старий <code>config.yml</code> без заповнювача <code>{number}</code>.</p>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.1.7</span><span class="badge">21 серпня 2026</span><span class="badge">Ballistic rollback</span></div>
+    <h3>Політ балістики повернуто до реалізації 3.1.0</h3>
+    <p>Корпус ракети знову є ванільною сутністю <code>Trident</code>, рухається швидкістю й сам повертається за напрямком польоту. Тимчасові display-корпус, відновлення та повторне створення сутності, альтернативна перевірка стартової колізії й діагностичні обхідні механізми видалено.</p>
+    <p>Причиною самознищення був дозвіл <code>air-defence.projectiles.trident: true</code>: службовий тризуб ракети потрапляв у ручний обробник ППО та влучав у власний hitbox. Тепер активна балістична ракета завжди виключається з цього обробника, а звичайні кинуті гравцями тризубці зберігають свою ванільну поведінку та можуть бути дозволеним боєприпасом ППО.</p>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.1.1</span><span class="badge">21 серпня 2026</span><span class="badge">UI fix</span></div>
+    <h3>Номер установки безпосередньо в пульті</h3>
+    <p>Заголовок меню балістичної установки та пункт «Статус» тепер показують її постійний номер. Для старого блоку, вилученого через <code>/ballistic clear_list</code>, відображається позначка «поза реєстром».</p>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.1.0</span><span class="badge">21 серпня 2026</span><span class="badge">Доопрацювання</span></div>
+    <h3>Надійний старт ракет і керований реєстр установок</h3>
+    <p>Номери зруйнованих установок тепер повторно використовуються, а <code>/ballistic clear_list</code> очищує власний список і починає нумерацію нових пускових із <code>#1</code>. Перші три секунди польоту ракета захищена від перехоплення ППО, однак тверда перешкода над установкою все одно спричиняє детонацію; вода старту не заважає. У пульті ППО з'явилась окрема кнопка завантаження ракет-перехоплювачів. Також виправлено показ відсутніх нових повідомлень у старих конфігах.</p>
+  </article>
+  <article class="card">
+    <div class="news-meta"><span class="badge ok">BobsterDefence 3.0.0</span><span class="badge">21 серпня 2026</span><span class="badge">Новий функціонал</span></div>
+    <h3>Централізоване керування обороною та балістикою</h3>
+    <p>Версія 3.0.0 розширює керування балістичними установками, додає нові режими ППО, персистентну паузу автономних держав і повноцінну камеру польоту ракети.</p>
+    <div class="news-grid">
+      <div class="card">
+        <h3>Ракетна камера</h3>
+        <p><code>/rocket</code> переносить гравця в центр ракети. На початку камера дивиться за напрямком польоту, після чого її можна вільно обертати. Після влучання, зникнення ракети або виходу з режиму гравець повертається у своє тіло.</p>
+      </div>
+      <div class="card">
+        <h3>Мережа пускових</h3>
+        <p>Установки отримали постійні номери та вибір через <code>/ballistic list</code>, <code>/ballistic select 1 2 3</code> і <code>/ballistic select all</code>. <code>/ballistic select none</code> прибирає активний вибір. Вибір зберігається після рестарту, а наведення та залп можуть застосовуватися до групи.</p>
+      </div>
+      <div class="card">
+        <h3>Редстоун-запуск</h3>
+        <p>Балістику можна запускати сигналом редстоуну. Режим перемикається барвником у панелі установки та за замовчуванням вимкнений, щоб випадковий сигнал не витратив боєприпас.</p>
+      </div>
+      <div class="card">
+        <h3>ППО проти елітр</h3>
+        <p>NASAMS, Patriot і FREYJA можуть збивати чужих гравців на елітрах. Режим окремо вмикається барвником; власник установки й учасники його коаліції залишаються дружніми цілями.</p>
+      </div>
+      <div class="card">
+        <h3>Автономні держави</h3>
+        <p><code>/bobster states stop</code> записує статус <code>PAUSED</code> у SQLite, припиняє симуляцію, війни, фізичне населення та матеріалізацію будівництва. <code>/bobster states start</code> безпечно відновлює державу.</p>
+      </div>
+      <div class="card">
+        <h3>Баланс і захист</h3>
+        <p>Оновлено характеристики трьох FPV-дронів та систем ППО. Чужим гравцям заборонено переглядати, налаштовувати й ламати балістичні установки та ППО, якщо вони не мають адміністративного дозволу.</p>
+      </div>
+    </div>
+  </article>
+
+  <h2 id="install">Встановлення і залежності</h2>
+  <ol>
+    <li>Використовувати Paper 1.21.1 та Java 21. Folia не підтримується.</li>
+    <li>Покласти обидва JAR у <code>plugins/</code>.</li>
+    <li>BlueMap необов'язковий: без нього TerritoryMap зберігає й обчислює території, але не малює вебмапу.</li>
+    <li>DiscordSRV необов'язковий і потрібний лише для Discord-повідомлень повітряної тривоги.</li>
+    <li>Після першого запуску перевірити <code>plugins/BobsterDefence/config.yml</code> і <code>plugins/TerritoryMap/config.yml</code>.</li>
+  </ol>
+  <div class="card"><b>Порядок запуску.</b> BobsterDefence має <code>softdepend: TerritoryMap</code>, тому за наявності обох Paper завантажує TerritoryMap першим. Якщо його Service API недоступний, створення нової NPC-держави блокується, але решта BobsterDefence продовжує працювати.</div>
+  <div class="card"><b>Чистий config.yml після оновлення.</b> Якщо зупинити сервер, видалити лише <code>plugins/BobsterDefence/config.yml</code>, встановити новий JAR і запустити сервер, BobsterDefence автоматично скопіює актуальний конфіг із JAR. Решта файлів у папці плагіна — SQLite-база держав, коаліції, технології, реєстр установок та інші збереження — не видаляються. Без JAR або без запуску сервера новий конфіг не створиться.</div>
+
+  <h2 id="architecture">Загальна архітектура</h2>
+  <div class="flow"><span>Гравець / State AI</span><b>→</b><span>BobsterDefence combat</span><b>→</b><span>Physical entities</span><b>→</b><span>Strategic simulation</span><b>↔</b><span>TerritoryMap API</span><b>→</b><span>BlueMap</span></div>
+  <ul>
+    <li><b>TerritoryMap</b> є авторитетним джерелом зовнішньої геометрії та основного власника території.</li>
+    <li><b>BobsterDefence SQLite</b> є авторитетним джерелом держав, Citizen, економіки, загроз і майбутніх будівель/війн.</li>
+    <li><b>Physical layer</b> показує те, що зараз завантажено: NPC, ракети, дрони, блоки й вибухи.</li>
+    <li><b>Simulation layer</b> продовжує економіку й демографію без постійного chunk loading.</li>
+    <li><b>CombatPrincipal</b> уніфікує власника бойового об'єкта: <code>PLAYER</code> або <code>STRATEGIC_STATE</code>.</li>
+  </ul>
+
+  <h2 id="field-manual">Повний польовий статут BobsterDefence</h2>
+  <p>Увесь польовий статут BobsterDefence розміщено нижче безпосередньо в цій сторінці. Ліва навігація переходить до потрібного пункту, а пошук браузера охоплює весь довідник.</p>
+  <div id="manual-content">
+<section id="manual-start">
+    <div class="sec-head">
+      <h2>Початок роботи</h2>
+      <span class="tag">адмін</span>
+    </div>
+    <div class="stack">
+      <p>
+        Кинути <code>BobsterDefence-3.6.1.jar</code> у теку <code>plugins/</code> і перезапустити сервер.
+        Плагін сам створить <code>plugins/BobsterDefence/config.yml</code> з усіма налаштуваннями українською.
+      </p>
+      <pre class="figure">[BobsterDefence] Bobster Defence v3.6.1 enabled
+[BobsterDefence] Chest Protection: ENABLED
+[BobsterDefence] Air Defence: ENABLED
+[BobsterDefence] FPV Drone: ENABLED
+[BobsterDefence] Ballistic: ENABLED
+[BobsterDefence] Auto Air Defence: ENABLED</pre>
+      <p>
+        Бойові модулі й технології можна вимкнути окремо: <code>enabled: false</code> у своїй секції конфігу.
+        Після правок — <code>/bobster reload</code>, рестарт не потрібен.
+      </p>
+      <div class="note">
+        <span class="note-label">Файли даних</span>
+        <code>config.yml</code> — усі налаштування й тексти ·
+        <code>stats.yml</code> — статистика перехоплень ·
+        <code>aa-launchers.yml</code> — координати стаціонарних ППО ·
+        <code>ballistic-launchers.yml</code> — постійні номери, власники, координати й вибір балістичних установок ·
+        <code>drone-launchers.yml</code> — постійні номери, власники, координати й вибір дронових установок.
+      </div>
+      <div class="note warn">
+        <span class="note-label">Оновлення зі старої версії</span>
+        Установки, поставлені до перейменування (MK-I…MK-V, AA MK-I…MK-III), продовжують працювати:
+        старі позначення зіставляються з новими автоматично. А от <strong>старий боєзапас
+        не підійде</strong> — балістика тепер стріляє крафтовими ракетами замість TNT, і в кожної
+        ППО власна ракета. Перезарядити доведеться заново.
+      </div>
+    </div>
+  </section>
+<section id="manual-technology">
+    <div class="sec-head">
+      <h2>Військові технології</h2>
+      <span class="tag">9 книг</span>
+    </div>
+    <div class="stack">
+      <p>
+        Крафти балістичних установок, балістичних ракет, керованих крилатих ракет, стаціонарних ППО та їхніх
+        ракет-перехоплювачів закриті персональними технологіями. Прогрес належить UUID гравця
+        і зберігається разом із його player data після смерті, виходу та перезапуску сервера.
+      </p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Напрям</th><th>Книги</th><th>Що відкриває одна книга</th></tr></thead>
+          <tbody>
+            <tr><td>Балістика</td><td>FP-5, Satan, FP-7, FP-9</td><td>установку вибраного рівня та її ракету</td></tr>
+            <tr><td>Стаціонарна ППО</td><td>NASAMS, Patriot, FREYJA</td><td>установку вибраного рівня та її перехоплювач</td></tr>
+            <tr><td>Крилаті ракети</td><td>Corsair, Barrier</td><td>Corsair відкриває Rocket launch system і Corsair; Barrier відкриває ракету Barrier</td></tr>
+            <tr><td>FPV-дрони</td><td>не потрібні</td><td>усі дрони крафтяться відразу</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Візьми написану книгу в основну руку та натисни <strong>ПКМ</strong>. Книга поглинається,
+        показує свій технічний текст і відкриває обидва рецепти в книзі рецептів. Якщо технологія
+        вже вивчена, з'явиться попередження, а книга залишиться в руці.
+      </p>
+      <div class="note warn">
+        <span class="note-label">Без технології результат порожній</span>
+        Матеріали можна правильно розкласти у верстаку, але вихідна клітинка залишиться порожньою.
+        Автоматичний Crafter також не може обходити персональний допуск. Вимкнути всю систему можна
+        через <code>technologies.enabled: false</code>.
+      </div>
+      <div class="note">
+        <span class="note-label">Як видати книгу</span>
+        Адміністратор використовує <code>/bobster tech give ballistic fp7 Нік</code> або
+        <code>/bobster tech give aa patriot Нік</code>. Для крилатих ракет —
+        <code>/bobster tech give cruise corsair Нік</code> і <code>/bobster tech give cruise barrier Нік</code>. Такі книги можна роздавати за квести,
+        торгівлю, івенти чи розвиток держави. Перелік власних допусків — <code>/bobster tech list</code>.
+      </div>
+    </div>
+  </section>
+<section id="manual-chest">
+    <div class="sec-head">
+      <h2>Захист скринь</h2>
+      <span class="tag">працює саме собою</span>
+    </div>
+    <div class="stack">
+      <p>
+        Скрині й trapped-скрині <strong>не руйнуються вибухами</strong>. Ні TNT, ні кріпер,
+        ні кристал енду, ні вогняна куля їх не чіпають.
+      </p>
+      <p>
+        При цьому вибух відбувається як завжди: стіни розлітаються, кратер на місці, шкода гравцям —
+        усе штатно. Просто скриня зникає зі списку блоків, які має знести. Подвійні скрині працюють
+        самі собою — це два окремі блоки.
+      </p>
+      <div class="note warn">
+        <span class="note-label">Що це не робить</span>
+        Скриня не стає невразливою. Киркою чи рукою вона ламається абсолютно як завжди —
+        захист стосується <em>тільки</em> вибухів.
+      </div>
+    </div>
+  </section>
+<section id="manual-manual">
+    <div class="sec-head">
+      <h2>Ручне ППО</h2>
+      <span class="tag">лук</span>
+    </div>
+    <div class="stack">
+      <p>
+        Влучив стрілою в <strong>активований</strong> TNT — той детонує на місці, у повітрі.
+        Це працює по TNT, що летить, падає або просто горить на землі.
+      </p>
+      <div class="note warn">
+        <span class="note-label">Головне правило</span>
+        Стріляти треба в <strong>підпалений</strong> TNT (той, що миготить), а не в блок TNT.
+        По блоку стріла просто відскочить.
+      </div>
+      <p>
+        Збивають звичайні, зіллєві та spectral стріли. Тризуб вимкнено в конфізі, сніжки, яйця
+        й феєрверки не працюють ніколи.
+      </p>
+      <p>
+        Тими самими стрілами збиваються <strong>FPV-дрони</strong> (з одного влучання) і
+        <strong>балістичні ракети</strong> (з одного або двох — залежно від ракети). Усе йде в
+        один лічильник: <code>/bobster stats</code>, топ сервера — <code>/bobster top</code>.
+      </p>
+      <pre class="figure">🛡 ППО BOBSTER | ЦІЛЬ ЗНИЩЕНО (14)</pre>
+    </div>
+  </section>
+<section id="manual-drones">
+    <div class="sec-head">
+      <h2>FPV-дрони</h2>
+      <span class="tag">3 моделі</span>
+    </div>
+    <div class="stack">
+      <p>
+        Керовані дрони-камікадзе. Запускаєш — і сам стаєш камерою: летиш від першої особи,
+        шукаєш ціль, врізаєшся. Три моделі під різні задачі.
+      </p>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Модель</th><th>Дальність</th><th>Час польоту</th><th>По блоках</th><th>По гравцях</th><th>Швидкість</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">FP-1</td><td class="num">1500</td><td class="num">240 с</td><td class="num">5.0</td><td class="num">від вибуху</td><td class="num">0.75 (без прискорення)</td></tr>
+            <tr><td class="mono">P1-Sun</td><td class="num">500</td><td class="num">60 с</td><td class="num">1.0</td><td class="num">80 шкоди</td><td class="num">2.0</td></tr>
+            <tr><td class="mono">D1L-Duck</td><td class="num">1000</td><td class="num">120 с</td><td class="num">2.5</td><td class="num">від вибуху</td><td class="num">2.0 (без прискорення)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>FP-1 — важкий ударний</h4>
+      <p>
+        Основний дрон. Дальність 1500 блоків і чотири хвилини польоту дозволяють дістати
+        майже куди завгодно, але він <strong>повільний і не вміє прискорюватися</strong>:
+        <kbd>Ctrl</kbd> на ньому не працює взагалі. Чотири хвилини заряду тут не запас,
+        а необхідність — на такій швидкості далеко летіти довго.
+        Вибух як у ванільного TNT: зносить стіни.
+      </p>
+
+      <h4>P1-Sun — протипіхотний</h4>
+      <p>
+        Забудову майже не чіпає (сила 1.0), але гравця в епіцентрі <strong>вбиває напевно</strong>:
+        80 шкоди в епіцентрі. Шкода спадає до країв радіуса в 4 блоки,
+        тож на межі це вже не смертельно. Ванільний вибух так не вміє — там сила одночасно
+        і радіус руйнувань, і шкода, тому протипіхотну частину рахує сам плагін.
+        Найшвидший з трьох і найдешевший.
+      </p>
+
+      <h4>D1L-Duck — середній</h4>
+      <p>
+        Потужність 2.5, дві хвилини польоту, 1000 блоків і швидкість 2.0 без прискорення.
+        Проміжний варіант, коли FP-1 надто дорогий і повільний, а P1-Sun нічого не зруйнує.
+      </p>
+
+      <h3>Крафти</h3>
+      <div class="crafts">
+        <div class="craft">
+          <div class="craft-name">🛩 FP-1</div>
+          <div class="grid3">
+            <div class="cell empty"></div><div class="cell">мембрана фантома</div><div class="cell empty"></div>
+            <div class="cell">редстоун</div><div class="cell key">TNT</div><div class="cell">редстоун</div>
+            <div class="cell">залізо</div><div class="cell">підзорна труба</div><div class="cell">залізо</div>
+          </div>
+          <div class="craft-note">→ 1 дрон</div>
+        </div>
+        <div class="craft">
+          <div class="craft-name">🛩 P1-Sun</div>
+          <div class="grid3">
+            <div class="cell empty"></div>
+            <div class="cell">алмаз</div>
+            <div class="cell empty"></div>
+            <div class="cell">залізо</div>
+            <div class="cell key">TNT</div>
+            <div class="cell">залізо</div>
+            <div class="cell">редстоун</div>
+            <div class="cell">порох</div>
+            <div class="cell">редстоун</div>
+          </div>
+          <div class="craft-note">→ 1 дрон</div>
+        </div>
+        <div class="craft">
+          <div class="craft-name">🛩 D1L-Duck</div>
+          <div class="grid3">
+            <div class="cell empty"></div>
+            <div class="cell">алмаз</div>
+            <div class="cell empty"></div>
+            <div class="cell">залізо</div>
+            <div class="cell key">TNT</div>
+            <div class="cell">залізо</div>
+            <div class="cell">порох</div>
+            <div class="cell">залізо</div>
+            <div class="cell">порох</div>
+          </div>
+          <div class="craft-note">→ 1 дрон</div>
+        </div>
+      </div>
+
+      <div class="note">
+        <span class="note-label">Дрон чути</span>
+        Апарат у польоті постійно гудить. Це чути і оператору, і всім, над ким він пролітає, —
+        тож підкрастися нечутно не вийде. Розвідник гуде помітно тихіше за бойові дрони.
+      </div>
+
+      <h3>Політ</h3>
+      <div class="keys">
+        <div class="key-row"><kbd>ПКМ</kbd><span>запустити</span></div>
+        <div class="key-row"><kbd>W A S D</kbd><span>рух</span></div>
+        <div class="key-row"><kbd>Пробіл</kbd><span>вгору</span></div>
+        <div class="key-row"><kbd>Shift</kbd><span>вниз</span></div>
+        <div class="key-row"><kbd>Миша</kbd><span>напрямок</span></div>
+        <div class="key-row"><kbd>Ctrl</kbd><span>прискорення (крім FP-1)</span></div>
+      </div>
+      <p>Внизу екрана під час польоту:</p>
+      <pre class="figure">🛩 FPV-ДРОН «FP-1» | ███████░░░ 73% | 🔋 176s | 📡 840м</pre>
+      <p>
+        Дійшов до межі дальності — 📡 СИГНАЛ ВТРАЧЕНО. Скінчився заряд — ⚠ ЖИВЛЕННЯ ВИЧЕРПАНО.
+        В обох випадках дрон самознищується, а тебе повертає в тіло.
+      </p>
+
+      <div class="note">
+        <span class="note-label">Дрон об дрон</span>
+        Чужий дрон збивається <strong>тараном</strong> — просто влети в нього. Спрацьовує
+        на відстані близько 2 блоків, тож цілитися в піксель не треба. Твій дрон при цьому
+        детонує (він же камікадзе), а збиття зараховується тобі в <code>/bobster stats</code>.
+        Так само тараном збивається розвідник.
+      </div>
+
+      <div class="note warn">
+        <span class="note-label">Головний ризик</span>
+        Тіло оператора стоїть на місці запуску, підписане твоїм ніком, і <strong>вразливе</strong>.
+        Якщо тебе вб'ють у польоті — дрон миттєво детонує там, де був. З FP-1 це особливо болісно:
+        чотири хвилини стояти нерухомо на видноті — довго.
+      </div>
+      <p>
+        Під час польоту заблоковано інвентар, взаємодію, дроп і запуск другого дрона.
+        Дрон збивається однією стрілою, а стаціонарна ППО зіб'є його автоматично — тому летіти
+        краще низько, за рельєфом.
+      </p>
+    </div>
+  </section>
+<section id="manual-strike-launchers">
+    <div class="sec-head">
+      <h2>Дронова пускова й керовані крилаті ракети</h2>
+      <span class="tag">3.2.1</span>
+    </div>
+    <div class="stack">
+      <h3>Drone launch system</h3>
+      <p>
+        Це одна універсальна установка для FP-1, P1-Sun і D1L-Duck. Постав її у потрібному
+        напрямку, завантаж дрони через <strong>Shift + ПКМ</strong>, звичайним ПКМ відкрий пульт,
+        а координати задай командою <code>/drone launcher target &lt;x&gt; &lt;z&gt;</code> або
+        <code>/drone launcher target here</code>. Пуск із пульта чи команда запускають перший
+        придатний дрон із внутрішнього відсіку.
+      </p>
+      <p>
+        Кожна player-установка має постійний номер. <code>/drone launcher list</code> показує реєстр,
+        <code>select none</code> скидає груповий вибір, <code>select all</code> вибирає всі, а
+        <code>select 1 2 3</code> — конкретні номери. Наступні target, launch і redstone-команди
+        застосовуються до всієї групи. Номери та вибір переживають перезапуск сервера.
+      </p>
+      <p>
+        Автопілот піднімається на маршрут, верхня частина якого проходить щонайменше на
+        <strong>40 блоків вище кінцевої точки</strong>, після чого пікірує в ціль. Якщо наступні
+        дрони стартують раніше ніж за 2 секунди, установка почергово використовує центральний,
+        лівий і правий коридори з відхиленням 3 блоки. За паузи у 2 секунди й більше маршрут
+        знову центральний. Дальність визначає завантажена модель дрона.
+      </p>
+      <div class="crafts">
+        <div class="craft">
+          <div class="craft-name">Drone launch system</div>
+          <div class="grid3">
+            <div class="cell">залізний блок</div><div class="cell empty"></div><div class="cell">залізний блок</div>
+            <div class="cell">залізний блок</div><div class="cell key">викидувач</div><div class="cell">залізний блок</div>
+            <div class="cell">редстоун</div><div class="cell">редстоун-блок</div><div class="cell">редстоун</div>
+          </div>
+          <div class="craft-note">→ універсальна дронова пускова</div>
+        </div>
+      </div>
+
+      <h3>Rocket launch system</h3>
+      <p>
+        Одна установка приймає обидві керовані ракети. Завантаж боєприпаси через
+        <strong>Shift + ПКМ</strong> і натисни «Пуск». Оператор переходить у spectator,
+        прикріплюється до корпусу ракети. Перші 0,5 секунди установка виводить ракету прямо,
+        після чого оператор керує нею за ванільною моделлю елітр: із плавною
+        інерцією повороту, підйомною силою та перетворенням швидкості у висоту. Прибрано лише
+        пасивне гальмування: двигун підтримує швидкість типу ракети, підйом знижує її до 65%,
+        а пікірування збільшує максимум до 130%. Двигун змінює тільки модуль швидкості й не
+        нормалізує напрямок, тому вертикальний імпульс не блокує подальше пікірування. Перед
+        стартом потрібні 2,2 вільного блока
+        перед установкою. Протягом перших двох секунд боєголовка не зведена: раннє зіткнення
+        завершує політ без вибуху. Corsair має 15 секунд пального, Barrier — 30. Після цього
+        тяга вимикається, але ракета без обмеження дальності продовжує планерувати. Після штатного
+        зіткнення або перехоплення ППО гравець повертається у вихідне місце й режим.
+        Під час польоту action bar показує пальне, фактично пройдену дистанцію та поточну швидкість.
+      </p>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Ракета</th><th>Пальне</th><th>Сила вибуху</th><th>Збиття ППО</th><th>Перезарядка</th><th>Швидкість</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">Corsair</td><td class="num">15 с</td><td class="num">5.0</td><td class="num">1 влучання</td><td class="num">немає</td><td class="num">3.0</td></tr>
+          <tr><td class="mono">Barrier</td><td class="num">30 с</td><td class="num">7.0</td><td class="num">1 влучання</td><td class="num">немає</td><td class="num">3.6</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Корисне навантаження всіх ракет</h3>
+      <p>
+        Однакова система діє для FP-5, Satan, FP-7, FP-9, Corsair і Barrier. Звичайний рецепт
+        із TNT створює готову вибухову ракету. Якщо прибрати зі схеми всі TNT, результатом буде
+        той самий корпус із позначкою <strong>«Боєголовка: порожня»</strong>. Старі ракети,
+        створені до 3.6.0, автоматично трактуються як TNT-версії. Порожній рецепт і обидва
+        рецепти заряджання потребують тієї самої технологічної книги, що й відповідний корпус.
+      </p>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Рецепт заряджання</th><th>Результат при влучанні</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">порожня ракета + TNT</td><td>штатний вибух із потужністю корпусу та руйнуванням блоків</td></tr>
+          <tr><td class="mono">порожня ракета + вибухове зілля</td><td>без руйнування блоків; усі базові й custom-ефекти зілля поширюються в області</td></tr>
+          <tr><td class="mono">порожня ракета</td><td>не вибухає; корпус-Trident застрягає в точці удару</td></tr>
+        </tbody>
+      </table></div>
+      <p>
+        За стандартного <code>radius-per-power: 3.0</code> корпус потужністю 4.0 накриває зіллям
+        радіус 12 блоків, 5.0 — 15, 6.0 — 18, 7.0 — 21, а 8.0 — 24 блоки. Біля центру
+        тривалість ефекту повна, до краю плавно знижується, але не нижче 25%. Порожній корпус
+        перші 15 секунд лишає полум'я та чорний дим у зоні двигуна, потім ще 60 секунд димить
+        без вогню й зникає. Якщо поруч немає гравців і чанк вивантажився, декоративний корпус
+        не тримає його примусово та може бути прибраний сервером раніше.
+      </p>
+      <div class="crafts">
+        <div class="craft">
+          <div class="craft-name">Rocket launch system</div>
+          <div class="grid3">
+            <div class="cell">залізний блок</div><div class="cell">залізний люк</div><div class="cell">залізний блок</div>
+            <div class="cell">залізний блок</div><div class="cell key">викидувач</div><div class="cell">залізний блок</div>
+            <div class="cell">залізний блок</div><div class="cell">редстоун-блок</div><div class="cell">залізний блок</div>
+          </div>
+          <div class="craft-note">→ спільна пускова Corsair/Barrier</div>
+        </div>
+        <div class="craft">
+          <div class="craft-name">Corsair</div>
+          <div class="grid3">
+            <div class="cell empty"></div><div class="cell">залізо</div><div class="cell empty"></div>
+            <div class="cell">залізо</div><div class="cell key">TNT</div><div class="cell">залізо</div>
+            <div class="cell">мідь</div><div class="cell">редстоун</div><div class="cell">мідь</div>
+          </div>
+          <div class="craft-note">→ 1 Corsair</div>
+        </div>
+        <div class="craft">
+          <div class="craft-name">Barrier</div>
+          <div class="grid3">
+            <div class="cell empty"></div><div class="cell">залізний блок</div><div class="cell empty"></div>
+            <div class="cell">залізний блок</div><div class="cell key">TNT</div><div class="cell">залізний блок</div>
+            <div class="cell">мідний блок</div><div class="cell">редстоун-блок</div><div class="cell">мідний блок</div>
+          </div>
+          <div class="craft-note">→ 1 Barrier</div>
+        </div>
+      </div>
+      <div class="note">
+        <span class="note-label">Редстоун</span>
+        Обидві нові установки мають окремий перемикач у пульті. За замовчуванням він червоний
+        і вимкнений. Після ввімкнення фронт сигналу від важеля, кнопки або іншого джерела запускає
+        один боєприпас; для крилатої ракети власник установки має бути онлайн.
+      </div>
+      <div class="note warn">
+        <span class="note-label">Власність</span>
+        Користуватися або ламати установку може лише власник чи адміністратор. Під час ламання
+        установка та весь завантажений боєзапас випадають окремими предметами.
+      </div>
+    </div>
+  </section>
+<section id="manual-rockets">
+    <div class="sec-head">
+      <h2>Балістичні ракети</h2>
+      <span class="tag">4 системи</span>
+    </div>
+    <div class="stack">
+      <p>
+        Артилерія дальньої дії. Ставиш установку, заряджаєш ракету, задаєш координати —
+        ракета йде високою дугою і б'є в задану точку за кілометри від тебе.
+        Y вводити не треба: плагін сам знаходить поверхню.
+      </p>
+
+      <div class="note">
+        <span class="note-label">Установка і ракета — різні речі</span>
+        Пускова установка це лише труба. Усі бойові характеристики належать <strong>ракеті</strong>
+        і виписані в її описі: наведи курсор на ракету в інвентарі й побачиш дальність,
+        потужність, перезарядку і скільки влучань ППО вона витримує.
+        Кожна установка приймає тільки свою ракету.
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Ракета</th><th>Установка</th><th>Дальність</th><th>Сила вибуху</th><th>Збиття ППО</th><th>Перезарядка</th><th>Швидкість</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">FP-5 rocket</td><td class="mono">FP-5 launch system</td><td class="num">500</td><td class="num">4.0</td><td class="num">1 влучання</td><td class="num">10 с</td><td class="num">2.1</td></tr>
+            <tr><td class="mono">Satan rocket</td><td class="mono">Satan launch system</td><td class="num">1000</td><td class="num">5.0</td><td class="num">1</td><td class="num">20 с</td><td class="num">2.4</td></tr>
+            <tr><td class="mono">FP-7 rocket</td><td class="mono">FP-7 launch system</td><td class="num">1500</td><td class="num">6.0</td><td class="num">2</td><td class="num">30 с</td><td class="num">2.7</td></tr>
+            <tr><td class="mono">FP-9 rocket</td><td class="mono">FP-9 launch system</td><td class="num">2500</td><td class="num">8.0</td><td class="num">2</td><td class="num">60 с</td><td class="num">3.0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Сила <strong>4.0 — це рівно один ванільний TNT</strong>. Далі росте не лінійно: радіус вибуху
+        збільшується нелінійно, тож FP-9 із силою 20 зносив би пів бази одним пострілом.
+      </p>
+
+      <h3>Як виглядає політ</h3>
+      <p>
+        Ракета йде <strong>чотирма фазами</strong>, і кожну добре видно з землі:
+      </p>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Фаза</th><th>Що відбувається</th><th>Швидкість</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">LAUNCH</td><td>сходить майже прямовисно вгору, під ~87°</td><td class="num">×0.5</td></tr>
+            <tr><td class="mono">ASCENT</td><td>поступово розганяється і кладеться на курс</td><td class="num">×0.75</td></tr>
+            <tr><td class="mono">BALLISTIC</td><td>верхня частина дуги, двигун працює впівсили</td><td class="num">×1.0</td></tr>
+            <tr><td class="mono">DESCENT</td><td>круте пікірування на ціль, майже вертикально</td><td class="num">×1.3</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Корпус ракети завжди повернутий <strong>носом за напрямком руху</strong>, позаду тягнеться
+        факел полум'я і дим. Слід видно за <strong>сотні блоків</strong>, звук двигуна чути
+        приблизно за <strong>96 блоків</strong>, а пуск — за <strong>190</strong>.
+        Тобто чужий пуск ти помітиш задовго до того, як прилетить.
+      </p>
+      <p>
+        Стріляти можна й туди, де взагалі нікого немає: ракета <strong>сама тягне за собою
+        завантажені чанки</strong>, тож постріл на 2500 блоків у порожню тайгу долетить
+        і спрацює так само, як по чужій базі під носом. Зверху дуга піднімається
+        на 60–220 блоків над лінією «пуск → ціль», тож на далеких дистанціях ракета
+        проходить помітно вище будь-якої ППО і входить у зону ураження вже в пікіруванні.
+      </p>
+      <div class="note">
+        <span class="note-label">Стартовий чанк не вивантажиться</span>
+        Від команди запуску чанк установки утримується завантаженим <strong>30 секунд</strong>.
+        Після фактичного виходу ракети цей час поновлюється. У польоті ракета тримає configured
+        квадрат біля себе та такий самий квадрат приблизно на 48 блоків попереду; пройдені
+        чанки звільняються. Одночасні ракети використовують спільний лічильник tickets і не
+        можуть передчасно вивантажити маршрут одна одній.
+      </div>
+
+      <h3>Камера від першої особи</h3>
+      <p>
+        Команда <code>/rocket</code> доступна всім і під'єднує spectator-камеру до твоєї останньої
+        активної ракети. Позицію плавно веде пасажирський механізм Minecraft без повторних
+        телепортацій, а напрямок огляду залишається вільним:
+        можна дивитися вперед, назад і вбік під час набору висоти, пікірування чи падіння. Коли ракета вибухає або її перехоплюють,
+        гравець автоматично повертається у свою початкову позицію та попередній режим гри.
+      </p>
+      <ol>
+        <li>Клікни по установці, задай ціль і запусти ракету.</li>
+        <li>Введи <code>/rocket</code> під час відліку або польоту.</li>
+        <li>Щоб вийти раніше, натисни Shift або повтори <code>/rocket</code>.</li>
+      </ol>
+      <div class="note warn">
+        <span class="note-label">Можна підключитися ще до пуску</span>
+        Якщо активної ракети ще немає, але установка вибрана, камера фіксується всередині її
+        диспенсера. Там буде темно до запуску. Виконай <code>/ballistic launch</code>, і в момент
+        появи снаряда камера автоматично перейде на нього. Типовий час очікування — 300 секунд.
+      </div>
+
+      <div class="note warn">
+        <span class="note-label">FP-7 і FP-9: влучання ППО не проходить безслідно</span>
+        Ці дві ракети витримують перше влучання перехоплювача, але <strong>втрачають керування</strong>:
+        різко гальмують, збиваються з траєкторії і падають туди, куди винесе.
+        Бойова частина при цьому спрацьовує вдвічі слабше. Тобто навіть невдале перехоплення
+        зриває удар — ракета вже не прилетить куди цілилася.
+      </div>
+
+      <div class="note warn">
+        <span class="note-label">Успішне перехоплення — це теж вибух</span>
+        Збита ракета <strong>підривається там, де її дістали</strong>, повною бойовою частиною:
+        FP-5 — 5.0, Satan — 6.0, FP-7 — 8.0, FP-9 — 10.0. Це <strong>більше</strong> за наземний
+        вибух тієї ж ракети. Тобто перехоплювати варто <strong>далеко</strong> й високо:
+        збита над самою базою ракета зруйнує рівно те, що мала зруйнувати.
+        Збитий дрон детонує на 4.0 незалежно від моделі.
+        Політ так чи інакше завершується — ракета не може висіти в повітрі
+        довше <strong>2 хвилин</strong>, після цього вона детонує сама.
+      </div>
+
+      <h3>Крафти ракет</h3>
+      <div class="note good">
+        <span class="note-label">Рецепти працюють у BobsterDefence 3.0.0+</span>
+        Ракети крафтяться у звичайному верстаку строго за схемами нижче. Після заміни jar
+        обов'язково перезапусти сервер. Команда <code>/bobster reload</code> повторно реєструє рецепти
+        лише тоді, коли версія 3.0.0+ уже запущена. У консолі має з'явитися повідомлення
+        <code>Ballistic: зареєстровано крафтів — 8</code>.
+      </div>
+      <div class="crafts">
+        <div class="craft">
+          <div class="craft-name">🚀 FP-5 rocket</div>
+          <div class="grid3">
+            <div class="cell empty"></div>
+            <div class="cell">залізо</div>
+            <div class="cell empty"></div>
+            <div class="cell">залізо</div>
+            <div class="cell key">TNT</div>
+            <div class="cell">залізо</div>
+            <div class="cell">залізо</div>
+            <div class="cell">редстоун</div>
+            <div class="cell">залізо</div>
+          </div>
+          <div class="craft-note">→ 1 ракета</div>
+        </div>
+        <div class="craft">
+          <div class="craft-name">🚀 Satan rocket</div>
+          <div class="grid3">
+            <div class="cell empty"></div>
+            <div class="cell">редстоун</div>
+            <div class="cell empty"></div>
+            <div class="cell">блок заліза</div>
+            <div class="cell key">TNT</div>
+            <div class="cell">блок заліза</div>
+            <div class="cell empty"></div>
+            <div class="cell key">TNT</div>
+            <div class="cell empty"></div>
+          </div>
+          <div class="craft-note">→ 1 ракета</div>
+        </div>
+        <div class="craft">
+          <div class="craft-name">🚀 FP-7 rocket</div>
+          <div class="grid3">
+            <div class="cell">блок заліза</div>
+            <div class="cell">блок редстоуну</div>
+            <div class="cell">блок заліза</div>
+            <div class="cell">блок заліза</div>
+            <div class="cell">редстоун</div>
+            <div class="cell">блок заліза</div>
+            <div class="cell key">TNT</div>
+            <div class="cell key">TNT</div>
+            <div class="cell key">TNT</div>
+          </div>
+          <div class="craft-note">→ 1 ракета</div>
+        </div>
+        <div class="craft">
+          <div class="craft-name">🚀 FP-9 rocket</div>
+          <div class="grid3">
+            <div class="cell">блок заліза</div>
+            <div class="cell">блок редстоуну</div>
+            <div class="cell">блок заліза</div>
+            <div class="cell">блок заліза</div>
+            <div class="cell key">FP-7 rocket</div>
+            <div class="cell">блок заліза</div>
+            <div class="cell">блок заліза</div>
+            <div class="cell">блок алмазу</div>
+            <div class="cell">блок заліза</div>
+          </div>
+          <div class="craft-note">→ 1 ракета</div>
+        </div>
+      </div>
+
+      <div class="note warn">
+        <span class="note-label">Важливо для FP-9</span>
+        У центральну клітинку кладеться саме скрафчена <strong>FP-7 rocket</strong> із назвою,
+        lore та службовою міткою BobsterDefence. Звичайна феєрверкова ракета або перейменований
+        предмет не підходять. В усіх інших рецептах використовуються звичайні ванільні матеріали.
+      </div>
+
+      <h3>Крафти установок</h3>
+      <div class="crafts">
+        <div class="craft">
+          <div class="craft-name">FP-5 launch system</div>
+          <div class="grid3">
+            <div class="cell">залізо</div>
+            <div class="cell">редстоун</div>
+            <div class="cell">залізо</div>
+            <div class="cell">редстоун</div>
+            <div class="cell key">диспенсер</div>
+            <div class="cell">редстоун</div>
+            <div class="cell">залізо</div>
+            <div class="cell">блок редстоуну</div>
+            <div class="cell">залізо</div>
+          </div>
+          <div class="craft-note">базова установка</div>
+        </div>
+        <div class="craft">
+          <div class="craft-name">Satan launch system</div>
+          <div class="grid3">
+            <div class="cell empty"></div>
+            <div class="cell">блок заліза</div>
+            <div class="cell empty"></div>
+            <div class="cell">блок заліза</div>
+            <div class="cell key">диспенсер</div>
+            <div class="cell">блок заліза</div>
+            <div class="cell empty"></div>
+            <div class="cell">блок редстоуну</div>
+            <div class="cell empty"></div>
+          </div>
+          <div class="craft-note">окрема установка, не апгрейд</div>
+        </div>
+        <div class="craft">
+          <div class="craft-name">FP-7 launch system</div>
+          <div class="grid3">
+            <div class="cell empty"></div>
+            <div class="cell">блок заліза</div>
+            <div class="cell empty"></div>
+            <div class="cell">блок заліза</div>
+            <div class="cell key">FP-5</div>
+            <div class="cell">блок заліза</div>
+            <div class="cell empty"></div>
+            <div class="cell">блок редстоуну</div>
+            <div class="cell empty"></div>
+          </div>
+          <div class="craft-note">апгрейд з FP-5</div>
+        </div>
+        <div class="craft">
+          <div class="craft-name">FP-9 launch system</div>
+          <div class="grid3">
+            <div class="cell">блок алмазу</div>
+            <div class="cell">блок незериту</div>
+            <div class="cell">блок алмазу</div>
+            <div class="cell">незерит</div>
+            <div class="cell key">FP-7</div>
+            <div class="cell">незерит</div>
+            <div class="cell">блок алмазу</div>
+            <div class="cell">блок редстоуну</div>
+            <div class="cell">блок алмазу</div>
+          </div>
+          <div class="craft-note">апгрейд з FP-7</div>
+        </div>
+      </div>
+      <div class="note">
+        <span class="note-label">Апгрейди</span>
+        Кожен наступний рівень крафтиться з попередньої установки. Підсунути звичайний диспенсер,
+        перейменований у ковадлі, не вийде — плагін звіряє не назву.
+      </div>
+
+      <h3>Керування установкою</h3>
+      <div class="keys">
+        <div class="key-row"><kbd>ПКМ</kbd><span>пульт керування</span></div>
+        <div class="key-row"><kbd>Shift + ПКМ</kbd><span>відсік для ракет</span></div>
+      </div>
+      <p>
+        Заголовок пульта та пункт статусу показують постійний номер установки. На пульті п'ять кнопок: <strong>редстоун</strong>, <strong>статус</strong>, <strong>ціль</strong>,
+        <strong>боєзапас</strong> (відкриває відсік) і <strong>▶ ЗАПУСК</strong>.
+        Кнопка запуску сіріє, якщо чогось бракує. Над установкою висить табличка з назвою,
+        поточною ціллю та кількістю ракет. Червоний барвник забороняє запуск сигналом, зелений дозволяє.
+        За замовчуванням редстоун вимкнений; сигнал використовує вже задану ціль і штатно перевіряє боєзапас, дальність та cooldown.
+      </p>
+
+      <div class="note warn">
+        <span class="note-label">Установку не розібрати руками</span>
+        Переглядати, відкривати й знімати її може <strong>лише той, хто поставив</strong> — тоді вона повертається предметом
+        разом із вмістом. Чужому лишається один шлях: знищити ракетою або дроном, і тоді
+        установка <strong>не випадає</strong> взагалі. Те саме правило діє для ППО.
+      </div>
+
+      <h3>Реєстр і групове керування</h3>
+      <p>
+        Кожна поставлена гравцем установка отримує постійний номер у <code>ballistic-launchers.yml</code>.
+        <code>/ballistic list</code> показує координати, <code>/ballistic select 1 2 3</code> вибирає групу,
+        <code>/ballistic select all</code> — усі власні установки, а <code>/ballistic select none</code> повністю
+        прибирає активний вибір. Наведення, інформація та запуск застосовуються
+        до всього вибору. Якщо явного вибору немає, використовується остання установка, по якій власник клікнув.
+        Зруйнована установка звільняє свій номер. <code>/ballistic clear_list</code> забуває весь власний список
+        і поточний вибір без руйнування блоків; наступна нова установка отримає номер <code>#1</code>.
+      </p>
+
+      <h3>Постріл</h3>
+      <div class="note">
+        <span class="note-label">Безпечний вихід із пускової</span>
+        Перші <strong>3 секунди</strong> ППО не може захопити ракету, щоб вона не підривалася над власною установкою.
+        Це не дозволяє запуск крізь забудову: твердий блок у трьох блоках над пусковою або на подальшій траєкторії
+        викликає детонацію. Вода та інші рідини старту не перешкоджають.
+      </div>
+      <ol>
+        <li>Відлік <strong>3 → 2 → 1</strong> глухими ударами — і гучний рев двигуна на пуску, який чути далеко за межами бази.</li>
+        <li>Ракета йде вгору по крутій дузі — вона на 30% вища, ніж раніше, тож перехопити її на
+          підльоті стало помітно важче.</li>
+        <li>Усі гравці в радіусі <strong>250 блоків від точки удару</strong> отримують попередження.</li>
+      </ol>
+      <pre class="figure">🚨 БАЛІСТИЧНА ЗАГРОЗА
+Зафіксовано запуск ракети.
+Розрахункова зона удару: X 1250, Z -830</pre>
+    </div>
+  </section>
+<section id="manual-targeting">
+    <div class="sec-head">
+      <h2>Наведення</h2>
+      <span class="tag">три способи</span>
+    </div>
+    <div class="stack">
+      <p>
+        Установка <strong>запам'ятовує останню ціль</strong> — задавати щоразу не треба.
+        Поставив один раз, далі просто тиснеш ЗАПУСК скільки завгодно.
+      </p>
+
+      <h3>1 · Координати</h3>
+      <pre class="figure">/ballistic target 1250 -830     ← точка на карті
+/ballistic target here          ← туди, де ти стоїш зараз
+/ballistic launch               ← пуск (або кнопка на пульті)</pre>
+      <p>
+        Команди діють на ту установку, по якій ти <strong>останній раз клікнув</strong>.
+      </p>
+
+      <h3>2 · Розвідувальний дрон</h3>
+      <p>
+        Кнопка <strong>ЦІЛЬ</strong> на пульті піднімає в повітря розвідника — будь-яким кліком.
+        Це <strong>не камікадзе</strong>: він не вибухає, його задача — злітати, роздивитися
+        місцевість, записати ціль і <strong>повернутися на базу</strong>.
+      </p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Параметр</th><th>Значення</th></tr></thead>
+          <tbody>
+            <tr><td>Час польоту</td><td class="num">10 хвилин</td></tr>
+            <tr><td>Швидкість</td><td class="num">як у P1-Sun</td></tr>
+            <tr><td>Дальність прицілу</td><td class="num">512 блоків</td></tr>
+            <tr><td>Повернення на базу</td><td class="num">посадка на саму установку</td></tr>
+            <tr><td>Міцність</td><td class="num">5 сердець</td></tr>
+            <tr><td>Штраф за втрату</td><td class="num">30 хвилин без розвідника</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="keys">
+        <div class="key-row"><kbd>W A S D</kbd><span>політ</span></div>
+        <div class="key-row"><kbd>Пробіл / Shift</kbd><span>висота</span></div>
+        <div class="key-row"><kbd>ЛКМ</kbd><span>записати ціль</span></div>
+        <div class="key-row"><code>/ballistic mark</code><span>те саме, гарантовано</span></div>
+      </div>
+      <pre class="figure">🛰 РОЗВІДНИК | X 1250, Z -830 | 🔋 412s | ❤ 5 | 🏠 640м | ціль не задана</pre>
+      <div class="note warn">
+        <span class="note-label">Крізь рельєф не пролетиш</span>
+        Розвідник не вибухає об скелю, як FPV, — але й не проходить її наскрізь. Кожен удар
+        коштує <strong>одного серця</strong> з п'яти, апарат відкидає назад від перешкоди.
+        П'ять ударів — і його розбито з усіма наслідками (30 хвилин без розвідника).
+        Між ударами є коротка пауза, тож одне влітання в стіну не з'їдає весь запас одразу.
+      </div>
+      <p>
+        Внизу екрана — координати блока під прицілом, заряд, відстань до бази й статус.
+        Приціл б'є на 512 блоків, тому ціль можна вибрати навіть з великої висоти.
+        Записав ціль — <strong>лети назад і сідай на установку</strong>: треба зависнути прямо
+        над її блоком і опуститися майже впритул. Пролетіти поруч замало. Щойно сів —
+        розвідник заводиться в ангар, і ти повертаєшся у своє тіло.
+        Перші 5 секунд після зльоту посадка не рахується, інакше він «сідав» би тієї ж миті,
+        коли з'явився.
+      </p>
+      <div class="note warn">
+        <span class="note-label">Не повернувся — втратив</span>
+        Збили з лука, протаранили чужим FPV, скінчився заряд або ти вийшов з гри —
+        розвідник знищено, а установка лишається <strong>без розвідника на 30 хвилин</strong>.
+        Записана ціль при цьому зберігається: злітати за нею вдруге не треба.
+      </div>
+      <div class="note">
+        <span class="note-label">Його не бачить ППО</span>
+        Стаціонарна ППО по розвіднику не стріляє — він для неї невидимий. Але це звичайна
+        стійка з бронею: лучник збиває її з одного пострілу, а чужий FPV-дрон — тараном.
+      </div>
+      <p>
+        Якщо клік по блоку не спрацював (у режимі спостерігача клієнт не завжди надсилає
+        клік серверу) — працює команда <code>/ballistic mark</code>, вона робить те саме
+        і працює завжди.
+      </p>
+
+      <h3>3 · Карта на стіні</h3>
+      <p>
+        Вішаєш заповнену карту в рамку на стіну і <strong>присідаєш + ПКМ по потрібній точці</strong>.
+        Ціль ставиться туди, куди тицьнув, а на самій карті в цьому місці з'являється
+        <strong>хрестик</strong> — видно, куди наведена установка.
+      </p>
+      <pre class="figure">   ┌────────────────┐
+   │        ✕       │  ←  Shift + ПКМ сюди
+   │     ▓▓▓▓       │
+   │       ▓        │  →  🎯 Ціль: X 1250, Z -830 (742м)
+   └────────────────┘
+        карта в рамці</pre>
+      <p>
+        Карта при цьому <strong>не обертається</strong> — звичайний клік по рамці крутить предмет
+        на 45°, але з присіданням плагін цей поворот перехоплює. Без присідання рамка
+        поводиться як завжди.
+      </p>
+      <p>
+        Точність залежить від масштабу карти: 1:1 — один блок на піксель, 1:16 — шістнадцять.
+        Командний пункт зручно робити з двох карт: оглядової 1:16 для вибору району
+        і детальної 1:1 для точного удару. Карта має бути на <strong>вертикальній стіні</strong>.
+      </p>
+    </div>
+  </section>
+<section id="manual-aa">
+    <div class="sec-head">
+      <h2>Стаціонарна ППО</h2>
+      <span class="tag">3 системи</span>
+    </div>
+    <div class="stack">
+      <p>
+        Автоматична установка. Поставив, зарядив — і вона сама сканує зону навколо себе й пускає
+        керовані палаючі ракети по всьому ворожому, що туди залетіло: TNT, FPV-дронах,
+        балістичних ракетах.
+      </p>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Система</th><th>Зона</th><th>Радіус</th><th>Вгору/вниз</th><th>Цілей</th><th>Затримка</th><th>Швидкість</th><th>Проти балістики</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">NASAMS</td><td class="num">32 × 32</td><td class="num">20</td><td class="num">80</td><td class="num">1</td><td class="num">15 с</td><td class="num">1.5</td><td class="num">25%</td></tr>
+            <tr><td class="mono">Patriot</td><td class="num">64 × 64</td><td class="num">32</td><td class="num">120</td><td class="num">2</td><td class="num">5 с</td><td class="num">2.5</td><td class="num">50%</td></tr>
+            <tr><td class="mono">FREYJA</td><td class="num">96 × 96</td><td class="num">48</td><td class="num">160</td><td class="num">3</td><td class="num">2 с</td><td class="num">3.5</td><td class="num">80%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note warn">
+        <span class="note-label">Балістику бере не кожна система</span>
+        Проти TNT і дронів усі три працюють однаково надійно. А от важку ракету NASAMS
+        здебільшого не витягує: перехоплювач дійде, іскри будуть — і ракета полетить далі.
+        Шанс NASAMS дорівнює 25%, Patriot — 50%, FREYJA — 80%.
+        <br><br>
+        Це <strong>не квота</strong>: кожна ракета — окремий незалежний кидок. Після восьми
+        збитих поспіль дев'ята має ті самі 80%, а після довгої серії промахів шанс не «накопичується».
+        Кидок робиться один раз на ракету для кожного типу ППО, тож п'ять батарей NASAMS
+        дають ті самі 25% — інакше кількість замінювала б якість.
+      </div>
+
+      <h3>Що означають ці дві цифри</h3>
+      <div class="note">
+        <span class="note-label">Цілей одночасно</span>
+        Скільки цілей установка може взяти за один пуск. FREYJA бере три, NASAMS — одну.
+      </div>
+      <div class="note">
+        <span class="note-label">Головне — це темп вогню</span>
+        Установка робить <strong>один пуск на кожні N секунд</strong>, і більше нічого на це
+        не впливає: ні скільки цілей у зоні, ні чим закінчився попередній постріл.
+        NASAMS стріляє раз на <strong>15 секунд</strong>, Patriot — раз на <strong>5</strong>,
+        FREYJA — раз на <strong>2</strong>. Тобто NASAMS фізично не здатна відбити щільний
+        наліт: поки вона перезаряджається, повз неї пройде все інше.
+      </div>
+      <pre class="figure">Залп із 5 TNT проти NASAMS (раз на 15 с):
+
+  🧨 🧨 🧨 🧨 🧨
+   ↓
+  🔥 ← один перехоплювач
+      🧨 🧨 🧨 🧨  ← решта проходить вільно
+
+Проти FREYJA (раз на 2 с):
+
+  🔥 ... 🔥 ... 🔥 ← пуск кожні дві секунди
+            🧨  ← проходить те, що встигло</pre>
+
+      <h3>Своя ракета для кожної системи</h3>
+      <p>
+        NASAMS не заряджається ракетою від Patriot і навпаки. Кожна система має власний
+        боєприпас, і чим потужніша установка — тим дорожча ракета.
+      </p>
+      <div class="crafts">
+        <div class="craft">
+          <div class="craft-name">🔥 NASAMS rocket</div>
+          <div class="grid3">
+            <div class="cell empty"></div><div class="cell key">стріла</div><div class="cell empty"></div>
+            <div class="cell empty"></div><div class="cell">порох</div><div class="cell empty"></div>
+            <div class="cell empty"></div><div class="cell">редстоун</div><div class="cell empty"></div>
+          </div>
+          <div class="craft-note">→ 1 ракета</div>
+        </div>
+        <div class="craft">
+          <div class="craft-name">🔥 Patriot rocket</div>
+          <div class="grid3">
+            <div class="cell empty"></div>
+            <div class="cell">залізо</div>
+            <div class="cell empty"></div>
+            <div class="cell">порох</div>
+            <div class="cell key">стріла</div>
+            <div class="cell">порох</div>
+            <div class="cell empty"></div>
+            <div class="cell">редстоун</div>
+            <div class="cell empty"></div>
+          </div>
+          <div class="craft-note">→ 1 ракета</div>
+        </div>
+        <div class="craft">
+          <div class="craft-name">🔥 FREYJA rocket</div>
+          <div class="grid3">
+            <div class="cell">порох</div>
+            <div class="cell">залізо</div>
+            <div class="cell">порох</div>
+            <div class="cell">порох</div>
+            <div class="cell key">стріла</div>
+            <div class="cell">порох</div>
+            <div class="cell empty"></div>
+            <div class="cell">порох</div>
+            <div class="cell empty"></div>
+          </div>
+          <div class="craft-note">→ 1 ракета</div>
+        </div>
+      </div>
+
+      <h3>Крафти установок</h3>
+      <div class="crafts">
+        <div class="craft">
+          <div class="craft-name">🛡 NASAMS air defense</div>
+          <div class="grid3">
+            <div class="cell">залізо</div><div class="cell">блейз-стрижень</div><div class="cell">залізо</div>
+            <div class="cell">блок редстоуну</div><div class="cell key">диспенсер</div><div class="cell">блок редстоуну</div>
+            <div class="cell">залізо</div><div class="cell">залізо</div><div class="cell">залізо</div>
+          </div>
+          <div class="craft-note">базова установка</div>
+        </div>
+        <div class="craft">
+          <div class="craft-name">🛡 Patriot air defense</div>
+          <div class="grid3">
+            <div class="cell empty"></div><div class="cell">алмаз</div><div class="cell empty"></div>
+            <div class="cell">алмаз</div><div class="cell key">NASAMS</div><div class="cell">алмаз</div>
+            <div class="cell empty"></div><div class="cell">око енду</div><div class="cell empty"></div>
+          </div>
+          <div class="craft-note">апгрейд з NASAMS</div>
+        </div>
+        <div class="craft">
+          <div class="craft-name">🛡 FREYJA air defense</div>
+          <div class="grid3">
+            <div class="cell empty"></div><div class="cell">око енду</div><div class="cell empty"></div>
+            <div class="cell">незерит</div><div class="cell key">Patriot</div><div class="cell">незерит</div>
+            <div class="cell empty"></div><div class="cell">блок алмазу</div><div class="cell empty"></div>
+          </div>
+          <div class="craft-note">апгрейд з Patriot</div>
+        </div>
+      </div>
+
+      <h3>Як користуватися</h3>
+      <ol>
+        <li>Поставити установку — <strong>бажано високо</strong>, на дах або башту.</li>
+        <li><kbd>Shift + ПКМ</kbd> — відкриється відсік. Покласти туди ракети цієї системи.</li>
+        <li>Усе. Далі вона працює сама.</li>
+      </ol>
+      <p><kbd>ПКМ</kbd> без присідання показує характеристики й відкриває пульт. Окрема кнопка боєкомплекту відкриває сховище ракет-перехоплювачів, а барвник вмикає або вимикає вогонь по чужих гравцях на елітрах. Власник та члени його коаліції не атакуються. Чужий гравець не може переглядати, заряджати чи ламати ППО руками.</p>
+
+      <div class="keys">
+        <div class="key-row"><span class="mono">🟢 ACTIVE</span><span>чергує</span></div>
+        <div class="key-row"><span class="mono">🟠 TARGET LOCK</span><span>веде ціль</span></div>
+        <div class="key-row"><span class="mono">🔴 NO AMMO</span><span>боєзапас скінчився</span></div>
+      </div>
+
+      <h3>Три правила, які треба знати</h3>
+      <div class="stack">
+        <div class="note">
+          <span class="note-label">Крізь гору не стріляє</span>
+          Перед пуском перевіряється пряма видимість. Установка в підвалі не побачить нічого —
+          ППО треба ставити на висоті з відкритим сектором.
+        </div>
+        <div class="note">
+          <span class="note-label">Свій / чужий</span>
+          Установка не б'є по снарядах свого власника й тих, хто з ним в одній стороні.
+          Сторони прописує адмін у секції <code>teams</code>. Без цього твоя ж ППО збивала б
+          твої власні ракети над твоєю базою.
+        </div>
+        <div class="note">
+          <span class="note-label">Зона — циліндр, а не куля</span>
+          Радіус працює по горизонталі, вертикаль задається окремо: NASAMS дістає на 80 блоків
+          угору й униз, Patriot — на 120, FREYJA — на 160. Балістична ракета в апогеї проходить набагато вище,
+          тому перехопити її можна на зниженні, коли вона входить у зону над самою ціллю.
+        </div>
+      </div>
+      <p>
+        Збиття зараховуються власнику установки в <code>/bobster stats</code>.
+      </p>
+      <div class="note">
+        <span class="note-label">Кілька установок працюють по одній цілі</span>
+        Якщо ракету бачать п'ять батарей — по ній відпрацює стільки, скільки треба влучань
+        на знищення, плюс одна про запас. Решта тримає інші цілі. Раніше ціль «займала»
+        рівно одну установку, і з п'яти стріляла тільки перша.
+      </div>
+      <p>
+        Перехоплювач цілиться в <strong>точку зустрічі</strong>, а не туди, де ціль зараз,
+        і влучання перевіряється по всьому відрізку його шляху за тік. Без цього по балістиці
+        він летів слідом і ніяк не діставав: ракета йде 2–3 блоки за тік, а перехоплювач
+        просто «перестрибував» її між тіками.
+      </p>
+    </div>
+  </section>
+<section id="manual-coalition">
+    <div class="sec-head">
+      <h2>Коаліції</h2>
+      <span class="tag">свої й чужі</span>
+    </div>
+    <div class="stack">
+      <p>
+        Коаліція — це список тих, з ким ти на одному боці. Плагін використовує її для двох речей:
+      </p>
+      <ul>
+        <li>ППО союзника <strong>не збиває</strong> твої ракети й дрони;</li>
+        <li>над територією союзника <strong>не вмикається тривога</strong> від твого удару.</li>
+      </ul>
+      <p>Збирається прямо в грі, без адміна й правок конфігу:</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Команда</th><th>Що робить</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">/coalition create &lt;назва&gt;</td><td>створити; ти стаєш засновником</td></tr>
+            <tr><td class="mono">/coalition add &lt;нік&gt;</td><td>прийняти гравця</td></tr>
+            <tr><td class="mono">/coalition kick &lt;нік&gt;</td><td>виключити</td></tr>
+            <tr><td class="mono">/coalition info</td><td>склад коаліції</td></tr>
+            <tr><td class="mono">/coalition leave</td><td>вийти самому</td></tr>
+            <tr><td class="mono">/coalition disband</td><td>розпустити (тільки засновник)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Скорочення: <code>/coa</code>, <code>/side</code>, <code>/союз</code>.</p>
+      <div class="note">
+        <span class="note-label">Гравець може бути лише в одній коаліції</span>
+        Щоб перейти в іншу — спершу <code>/coalition leave</code>. Засновник вийти не може:
+        або передає базу, або розпускає коаліцію.
+      </div>
+      <p>
+        Склад зберігається за UUID у <code>plugins/BobsterDefence/teams.yml</code>, тож зміна ніка
+        нічого не ламає. Секція <code>teams:</code> у конфізі теж працює — це статичний список
+        для адміна, він читається додатково.
+      </p>
+      <div class="note warn">
+        <span class="note-label">Своя територія — не привід для тривоги</span>
+        Тривога над територією не вмикається, якщо снаряд запустив її власник або хтось із його
+        коаліції. Власника територія бере з TerritoryMap, тому важливо, щоб той, хто стріляє,
+        і той, чия земля, були в одній коаліції.
+      </div>
+    </div>
+  </section>
+<section id="manual-raid">
+    <div class="sec-head">
+      <h2>Повітряна тривога</h2>
+      <span class="tag">TerritoryMap + Discord</span>
+    </div>
+    <div class="stack">
+      <p>
+        Тривога оголошується не по координатах, а <strong>по території</strong>, виділеній
+        у TerritoryMap. Тобто в чат приходить не «удар у точці X 1250, Z -830»,
+        а зрозуміле «ПОВІТРЯНА ТРИВОГА — Solaria».
+      </p>
+      <pre class="figure">🚨 ПОВІТРЯНА ТРИВОГА
+Територія Solaria (KpoJIeBapKa)
+Пройдіть в укриття.</pre>
+
+      <h3>Коли вмикається</h3>
+      <div class="cols">
+        <div>
+          <h4>🚀 Балістика</h4>
+          <p>Ціль ракети лежить усередині території.</p>
+        </div>
+        <div>
+          <h4>🛩 FPV-дрон</h4>
+          <p>Дрон підлетів ближче ніж на <strong>100 блоків</strong> до межі території.</p>
+        </div>
+      </div>
+      <p>
+        Тривога охоплює всю територію одразу, скільки б вона не займала. Якщо ціль на нічийній
+        землі, працює старе попередження з координатами для всіх у радіусі 250 блоків.
+      </p>
+
+      <h3>Коли вимикається</h3>
+      <p>
+        Сама, коли над територією <strong>3 хвилини</strong> нічого не літало. Кожен новий пуск
+        або проліт дрона відлік перезапускає — тобто під час затяжного штурму тривога
+        не мигає, а тримається до кінця.
+      </p>
+      <pre class="figure">🟢 ВІДБІЙ ТРИВОГИ
+Територія Solaria — 3 хв без активності.</pre>
+
+      <h3>Discord</h3>
+      <p>
+        Якщо на сервері стоїть DiscordSRV, тривоги й відбої дублюються в Discord.
+        За замовчуванням — у головний канал; інший вказується в <code>air-raid.discord.channel</code>.
+        Тексти для Discord окремі (<code>air-raid-discord-start</code> / <code>-end</code>),
+        бо ігрова розмітка в Discord не працює.
+      </p>
+      <div class="note">
+        <span class="note-label">Якщо DiscordSRV немає</span>
+        Нічого не ламається: плагін просто не надсилає нікуди. Ігрова частина працює як завжди.
+      </div>
+
+      <div class="note warn">
+        <span class="note-label">Для інших плагінів</span>
+        При кожній тривозі й відбої кидається подія <code>AirRaidEvent</code> з назвою території,
+        власником і типом загрози. На неї можна повісити alerts.yml DiscordSRV або власний плагін,
+        не чіпаючи код BobsterDefence.
+      </div>
+
+      <h3>Як воно бачить території</h3>
+      <p>
+        BobsterDefence читає <code>plugins/TerritoryMap/territories.yml</code> напряму й перечитує
+        його, щойно файл змінився (перевірка раз на 30 секунд). Нову територію видно без
+        перезапуску сервера, а оновлення TerritoryMap нічого не ламає — плагіни між собою
+        не зв'язані збіркою.
+      </p>
+      <p>
+        Скільки територій підхопилося, видно в консолі при старті:
+        <code>[BobsterDefence] Air Raid: ENABLED (7 територій)</code>.
+      </p>
+    </div>
+  </section>
+<section id="manual-war">
+    <div class="sec-head">
+      <h2>Як це грається разом</h2>
+      <span class="tag">тактика</span>
+    </div>
+    <div class="stack">
+      <pre class="figure">        НАПАД                      ОБОРОНА
+   ┌─────────────────┐        ┌─────────────────┐
+   │ 🚀 Балістика    │───────▶│ 🛡 NASAMS       │
+   │    здалеку      │        │ 🛡 Patriot      │
+   │                 │        │ 🛡 FREYJA       │
+   │ 🛩 FPV-дрони    │───────▶│ 🏹 Лучники      │
+   │    точково      │        │    вручну       │
+   └─────────────────┘        └─────────────────┘
+            │                          │
+            ▼                          ▼
+      прорвався ──────────────▶ 💥 удар по базі
+                                       │
+                                       ▼
+                              📦 скрині вціліли</pre>
+
+      <div class="cols">
+        <div>
+          <h4>Якщо ти нападаєш</h4>
+          <ul>
+            <li>Розвідка спершу: режим розвідки показує оборону, не витрачаючи ракету.</li>
+            <li>Балістику пускай <strong>залпом</strong> — NASAMS зіб'є лише одну ракету із залпу.</li>
+            <li>FP-7 і FP-9 переживають одне влучання, але падають не туди — на них не варто
+              покладатися проти щільної оборони.</li>
+            <li>P1-Sun не руйнує базу, зате вбиває захисників — дешевий спосіб зачистити лучників.</li>
+            <li>FPV веди низько, за рельєфом: ППО не стріляє крізь пагорби.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Якщо ти обороняєшся</h4>
+          <ul>
+            <li>Одна ППО — не оборона. Треба кілька, з перекриттям зон.</li>
+            <li>Став їх високо і не забувай перевіряти боєзапас.</li>
+            <li>FREYJA біля самої бази — вона встигне зловити ракету на зниженні.</li>
+            <li>Лучники — останній рубіж, коли автоматика вже вичерпалася.</li>
+            <li>Пропиши <code>teams</code>, інакше союзники будуть збивати одне одного.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="note warn">
+        <span class="note-label">Що б не сталося</span>
+        Скрині переживають будь-який удар. Базу можуть зрівняти з землею, але лут залишиться —
+        це навмисне, щоб війна не перетворювалася на втрату всього прогресу.
+      </div>
+    </div>
+  </section>
+<section id="manual-config">
+    <div class="sec-head">
+      <h2>Налаштування</h2>
+      <span class="tag">адмін</span>
+    </div>
+    <div class="stack">
+      <p>Усе в <code>config.yml</code>, коментарі українською. Найкорисніші ручки:</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Параметр</th><th>Що змінює</th><th>Типово</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">fpv-drone.drones.*.max-distance</td><td>дальність дрона</td><td class="num">500–1500</td></tr>
+            <tr><td class="mono">fpv-drone.drones.*.flight-time</td><td>час польоту, секунд</td><td class="num">60–240</td></tr>
+            <tr><td class="mono">fpv-drone.drones.*.player-damage</td><td>протипіхотна шкода</td><td class="num">0 / 80</td></tr>
+            <tr><td class="mono">guided-missile.types.*.fuel-seconds</td><td>час активної тяги Corsair і Barrier</td><td class="num">15 / 30</td></tr>
+            <tr><td class="mono">guided-missile.types.*.speed</td><td>базова швидкість керованої ракети</td><td class="num">3.0 / 3.6</td></tr>
+            <tr><td class="mono">guided-missile.flight.powered-climb-min-speed-multiplier</td><td>мінімальна частка паспортної швидкості при вертикальному наборі висоти з активним двигуном</td><td class="num">0.65</td></tr>
+            <tr><td class="mono">guided-missile.flight.powered-dive-max-speed-multiplier</td><td>максимальне прискорення під час пікірування з активним двигуном</td><td class="num">1.3</td></tr>
+            <tr><td class="mono">guided-missile.types.*.explosion-power</td><td>сила вибуху керованої ракети</td><td class="num">5.0 / 7.0</td></tr>
+            <tr><td class="mono">missile-payload.potion.radius-per-power</td><td>радіус potion-удару на одиницю потужності корпусу</td><td class="num">3.0</td></tr>
+            <tr><td class="mono">missile-payload.potion.minimum-intensity</td><td>мінімальна частка тривалості ефекту на краю області</td><td class="num">0.25</td></tr>
+            <tr><td class="mono">missile-payload.empty.burn-seconds</td><td>час полум'я двигуна застряглої порожньої ракети</td><td class="num">15</td></tr>
+            <tr><td class="mono">missile-payload.empty.smoke-seconds</td><td>наступний час чорного диму до видалення корпусу</td><td class="num">60</td></tr>
+            <tr><td class="mono">guided-missile.launch-protection-seconds</td><td>захист після пуску від ППО та зіткнень із сутностями</td><td class="num">2.0</td></tr>
+            <tr><td class="mono">guided-missile.launch-control-delay-seconds</td><td>час прямого виходу до передавання керування мишці</td><td class="num">0.5</td></tr>
+            <tr><td class="mono">guided-missile.flight.*</td><td>масштаб елітрової фізики, плавність двигуна та тривимірна керованість</td><td class="num">0.9 / 0.12 / 0.055</td></tr>
+            <tr><td class="mono">guided-missile.chunk-loading.*</td><td>випереджальний коридор, client-ready probe, send distance і плавне обмеження швидкості</td><td class="num">тільки Corsair/Barrier</td></tr>
+            <tr><td class="mono">drone-launcher.trajectory.height-above-target</td><td>висота автономного маршруту над кінцевою точкою</td><td class="num">40</td></tr>
+            <tr><td class="mono">drone-launcher.trajectory.lane-offset</td><td>бічне розведення швидкого залпу</td><td class="num">3.0</td></tr>
+            <tr><td class="mono">drone-launcher.trajectory.lane-reset-seconds</td><td>пауза, після якої маршрут знову центральний</td><td class="num">2.0</td></tr>
+            <tr><td class="mono">ballistic.launcher.*.speed</td><td>швидкість ракети, бл/тік</td><td class="num">2.1–3.0</td></tr>
+            <tr><td class="mono">ballistic.missile.launch-speed-multiplier</td><td>множник однакової за дальністю швидкості виходу ракети з установки</td><td class="num">0.2</td></tr>
+            <tr><td class="mono">ballistic.missile.launch-distance-blocks</td><td>фіксована довжина повільного вертикального виходу</td><td class="num">8.0</td></tr>
+            <tr><td class="mono">ballistic.missile.ascent-speed-multiplier</td><td>множник швидкості розгону після виходу</td><td class="num">0.75</td></tr>
+            <tr><td class="mono">ballistic.launcher.*.loses-control-when-hit</td><td>чи падає після влучання ППО</td><td class="num">FP-7, FP-9</td></tr>
+            <tr><td class="mono">ballistic.trajectory.height-per-block</td><td>крутизна дуги</td><td class="num">0.195</td></tr>
+            <tr><td class="mono">ballistic.warning.radius</td><td>радіус попередження про удар</td><td class="num">250</td></tr>
+            <tr><td class="mono">ballistic.missile.chunk-loading.start-hold-seconds</td><td>утримання чанка установки від команди та фактичного пуску</td><td class="num">30</td></tr>
+            <tr><td class="mono">ballistic.missile.interception-grace-ticks</td><td>захист ракети від ППО після старту; колізії з блоками залишаються</td><td class="num">60</td></tr>
+            <tr><td class="mono">ballistic.rocket-camera.enabled</td><td>камера від першої особи через /rocket</td><td class="num">true</td></tr>
+            <tr><td class="mono">ballistic.rocket-camera.waiting-timeout-seconds</td><td>скільки чекати пуску всередині установки</td><td class="num">300</td></tr>
+            <tr><td class="mono">air-defence-system.launcher.*.interceptor-speed</td><td>швидкість перехоплювача</td><td class="num">1.5–3.5</td></tr>
+            <tr><td class="mono">air-defence-system.launcher.*.max-targets</td><td>цілей одночасно</td><td class="num">1–3</td></tr>
+            <tr><td class="mono">air-defence-system.launcher.*.fire-cooldown</td><td>затримка між пострілами, тіків</td><td class="num">40–300</td></tr>
+            <tr><td class="mono">air-defence-system.targeting.elytra-player-damage</td><td>шкода перехопленому гравцю на елітрах</td><td class="num">20</td></tr>
+            <tr><td class="mono">air-defence-system.ammo.allow-plain-arrows</td><td>чи приймати звичайні стріли</td><td class="num">false</td></tr>
+            <tr><td class="mono">technologies.enabled</td><td>чи потрібні персональні технології для військових крафтів</td><td class="num">true</td></tr>
+            <tr><td class="mono">technologies.books.*</td><td>назви, lore, автори й сторінки книг технологій</td><td class="num">9 книг</td></tr>
+            <tr><td class="mono">teams</td><td>склад сторін для «свій/чужий»</td><td class="num">порожньо</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Сторони</h3>
+      <pre class="figure">teams:
+  bobster:
+    - KpoJIeBapKa
+    - aceLmR</pre>
+      <p>
+        Гравці, яких у списках немає, вважаються самі за себе: власна ППО по власних снарядах
+        не б'є, по чужих — б'є.
+      </p>
+
+      <h3>Тексти й крафти</h3>
+      <p>
+        Усі повідомлення лежать у секції <code>messages</code> у форматі MiniMessage
+        (<code>&lt;red&gt;</code>, <code>&lt;bold&gt;</code>, <code>&lt;gradient&gt;</code>).
+        Форми більшості старих бойових крафтів та інгредієнти лежать у конфізі. Рецепти
+        Drone launch system, Rocket launch system, Corsair і Barrier є фіксованими рецептами 3.2.0.
+        Після правок конфігу — <code>/bobster reload</code>.
+      </p>
+    </div>
+  </section>
+  </div>
+
+  <h2 id="bobster">BobsterDefence: системи</h2>
+  <table>
+    <tr><th>Система</th><th>Фактична логіка</th><th>Основні команди</th></tr>
+    <tr><td>Chest Protection</td><td>Вилучає configured chest-блоки зі списку блоків <code>EntityExplodeEvent</code>/<code>BlockExplodeEvent</code>. Ручне ламання не блокує.</td><td>Конфіг</td></tr>
+    <tr><td>Ручне ППО</td><td>Стріли перехоплюють TNT, FPV-дрони й ракетні hitbox. Для важких ракет може знадобитися кілька влучань.</td><td><code>/ppo</code></td></tr>
+    <tr><td>FPV</td><td>Оператор тимчасово переходить у spectator, камера керує hitbox; тіло може лишатися вразливим. Collision, battery, signal loss або interception завершують сесію.</td><td><code>/drone list|give</code></td></tr>
+    <tr><td>Drone launch system</td><td>Фізично зберігає будь-яку з трьох FPV-моделей, веде її автопілотом через центр або один із двох бічних коридорів і пікірує з маршруту на 40 блоків вище цілі. Має постійні номери, груповий вибір, ручний та redstone-пуск.</td><td><code>/drone launcher list|clear_list|select|target|launch|redstone|give</code></td></tr>
+    <tr><td>Guided cruise missiles</td><td>Спільна Rocket launch system приймає Corsair і Barrier. Ванільна elytra-фізика дає інерційний поворот, підйомну силу та пікірування, а двигун прибирає лише пасивне згасання швидкості. ППО перехоплює ракету одним влучанням.</td><td><code>/rocket launch|redstone|give</code></td></tr>
+    <tr><td>Ballistic</td><td>Тризуб-корпус рухається по балістичній кривій; невидимий hitbox приймає ППО. Установки мають повторно використовувані номери, очищення списку, груповий вибір і вимкнений за замовчуванням redstone-пуск. <code>/rocket</code> плавно під'єднує вільну spectator-камеру до останньої власної ракети та гарантовано повертає гравця після завершення.</td><td><code>/ballistic list|clear_list|select|target|launch|info|give|rocket</code>, <code>/rocket</code></td></tr>
+    <tr><td>Auto AA</td><td>Стаціонарні установки шукають ворожі CombatPrincipal, запускають свої перехоплювачі й не стріляють по своїй коаліції. Власник окремим барвником дозволяє або забороняє перехоплення чужих гравців на елітрах.</td><td><code>/ppo list|give|ammo</code></td></tr>
+    <tr><td>Technologies</td><td>Дев'ять персональних книг відкривають 4 рівні балістики, 3 рівні ППО та 2 рівні крилатої зброї. Corsair відкриває спільну пускову й першу ракету, Barrier — другу ракету. Повторне читання не витрачає книгу; FPV не потребує досліджень.</td><td><code>/bobster tech list|give</code></td></tr>
+    <tr><td>Coalitions</td><td>Зберігають спільну сторону гравців у <code>teams.yml</code>; використовуються ППО та тривогою для friendly/hostile.</td><td><code>/coalition create|add|kick|leave|disband|info</code></td></tr>
+    <tr><td>Air Raid</td><td>Попереджає власників/учасників відповідної території про ворожу ракету; може дублювати повідомлення через DiscordSRV.</td><td>Автоматично</td></tr>
+  </table>
+
+  <h2 id="states">Strategic States</h2>
+  <p>Гільдія в цій системі — це гравець, який є власником своєї TerritoryMap-території. Strategic State — автономна NPC-держава з окремим UUID і системною територією.</p>
+  <h3>Створення</h3>
+  <ol>
+    <li>Адміністратор отримує <code>/bobster states core give</code> і ставить State Core.</li>
+    <li>Перевіряються світ, ліміт 1–5 держав, мінімальна відстань між Core та write API TerritoryMap.</li>
+    <li>Генеруються унікальні назва, скорочення, колір і personality.</li>
+    <li>TerritoryMap атомарно створює круглу системну територію з <code>ownerKind=STRATEGIC_STATE</code>. Радіус рівнів 1–5 за замовчуванням: 48, 64, 80, 96 і 112 блоків.</li>
+    <li>SQLite транзакційно записує державу, 4–6 Citizen та початкову економіку. При помилці територія відкочується.</li>
+  </ol>
+  <h3>Citizen lifecycle</h3>
+  <p>Citizen зберігається як логічний запис і має режими <code>VIRTUAL</code>, <code>MATERIALIZING</code>, <code>PHYSICAL</code>, <code>VIRTUALIZING</code>, <code>DEAD</code>. У завантаженому чанку він матеріалізується Pillager; при unload позиція та health зберігаються, entity видаляється. Reconcile на chunk load прибирає дублікати після аварійного завершення.</p>
+  <h3>Економіка й демографія</h3>
+  <p>Ресурси: WOOD, STONE, IRON, COAL, FOOD, GUNPOWDER, REDSTONE, FUEL, ADVANCED_COMPONENTS та ENERGY. Farmer виробляє FOOD, Lumberjack — WOOD, Miner — STONE/IRON/COAL. Населення споживає FOOD; дефіцит зменшує stability і спричиняє голод. Приріст потребує їжі, stability, вільного housing і ліміту населення.</p>
+  <p>Після рестарту <code>lastEconomyTick</code> і <code>lastPopulationTick</code> встановлюються на поточний час: вимкнений сервер не генерує безкоштовні ресурси або населення.</p>
+  <h3>Будівництво Phase 3</h3>
+  <p>Будівлі мають persisted footprint, template, progress, integrity та стани PLANNED, BUILDING, COMPLETE_VIRTUAL, MATERIALIZING, MATERIALIZED, BLOCKED, DAMAGED і DESTROYED. Початкові HOUSE і FARM плануються лише після перевірки NBT, TerritoryMap owner, горизонтального footprint з мінімальним проміжком <code>minimum-building-spacing</code>, доступності всіх чанків і відсутності сторонніх блоків. Висота рельєфу більше не дозволяє двом footprint накластися. Пошук майданчика йде кільцями навколо Core. Незавершена будівля без поставлених блоків, яка конфліктує зі старішою, переноситься на новий безпечний майданчик; уже матеріалізовані споруди автоматично не руйнуються. Після перевірок ресурси списуються атомарно.</p>
+  <p>Віртуальний progress працює у unloaded-чанках, але заморожується на час offline. HOUSE після завершення збільшує housing. COMPLETE_VIRTUAL чекає завантаження всього footprint, повторно перевіряє блоки, очищає дозволені блоки рельєфу й переходить у MATERIALIZING. Bedrock, barrier, портали та reinforced deepslate не перезаписуються. Якщо місця в поточному колі немає, держава просить TerritoryMap розширити геометрію ще на 32 блоки. Будівля над водою отримує настил, опори до дна й триблоковий шлях до найближчого берега: дерево для цивільних споруд, бетон і камінь для промислових.</p>
+  <p>Комплект <code>*_02.nbt</code> є окремим поколінням схем і не перезаписує адміністраторські або старі <code>*_01.nbt</code>. HOUSE має фундамент, каркас, двосхилий дах, вікна, двері, ліжко, піч і освітлення; FARM — зрошені культури, огорожу, ворота, комору й компостер; WORKSHOP і BARRACKS мають спеціалізовані інтер'єри. WAREHOUSE займає 19×9×23 блоки, має вантажний зал, розмітку, освітлення й 40 фізичних скринь. Military/Drone/Missile Factory є великими окремими цехами з колонами, вікнами, димарями, світлом і машинними лініями, а Air Defence Site є відкритою укріпленою позицією з командним приміщенням. Держава зі старими матеріалізованими коробками планує сучасну споруду того самого типу на новому footprint; стару будівлю плагін автоматично не руйнує.</p>
+  <p>Якщо в зоні є фізичний WORKER або BUILDER, він отримує task конкретної будівлі, рухається до безпечної зовнішньої сторони footprint, дивиться на поточний блок, тримає відповідний матеріал і відтворює swing-анімацію. Так будівельник не заходить усередину стін, що саме зводяться. Citizen є візуальним виконавцем; persisted block queue залишається джерелом істини й не залежить від існування entity. Візуалізацію контролюють <code>visual-builders</code> і <code>builder-movement-speed</code>.</p>
+  <h3>Професії та фізичні завдання Phase 4</h3>
+  <p>Кожна держава автоматично підтримує мінімальний цивільний склад: Farmer залежно від населення, Lumberjack і Builder від початку, Miner із 6 мешканців та Guard із 8. Для цього вільні WORKER послідовно отримують потрібну професію; призначення, дім, робоча будівля і поточне завдання записуються в SQLite та відновлюються після рестарту.</p>
+  <p>Удень фізичні Citizen виконують професійні ролі: Farmer розподіляються між FARM, Engineer — між WORKSHOP, оператори — між відповідними військовими об'єктами, військові патрулюють, а Worker, Miner і Lumberjack отримують рознесені змінні маршрути. Приблизно раз на п'ять секунд точки роботи змінюються, тому населення не збирається біля одного місця спавну. Уночі мешканці розподіляються між усіма HOUSE або відпочивають біля Core.</p>
+  <p>Навігатор використовує штатний Paper Pathfinder і швидкість моба, тому звичайне переміщення не виконується покроковими телепортами. Шлях періодично оновлюється; відсутність прогресу протягом кількох секунд запускає бічний обхід. Перевіряються loaded-чанки, безпечна підлога, ноги й голова. Телепорт допускається лише як аварійне звільнення з твердого блока або безпечна висадка з човна. Suffocation і fall damage керованих Citizen скасовуються, а службовий navigator state очищується при virtualize/death.</p>
+  <p>Активне завдання <code>BUILD:&lt;building UUID&gt;</code> має пріоритет над звичайним розкладом: такого Citizen контролює ConstructionManager до завершення матеріалізації, після чого він повертається до професійного циклу.</p>
+  <h3>Фізичний склад ресурсів</h3>
+  <p>До завершення першого WAREHOUSE держава використовує founding ledger, бо фізичного місця зберігання ще немає. Щойно склад матеріалізовано, WarehouseManager одноразово розкладає всі цілі одиниці ресурсів у його скрині. Надалі скрині є фізичним джерелом запасу: закриття складського inventory негайно перераховує SQLite-дзеркало, виробничий simulation tick додає предмети, а будівництво та military production вилучають їх перед фіксацією транзакції.</p>
+  <table>
+    <tr><th>Ресурс</th><th>Предмет за замовчуванням</th></tr>
+    <tr><td>WOOD / STONE / IRON / COAL</td><td>OAK_LOG / COBBLESTONE / IRON_INGOT / COAL</td></tr>
+    <tr><td>FOOD / GUNPOWDER / REDSTONE</td><td>BREAD / GUNPOWDER / REDSTONE</td></tr>
+    <tr><td>FUEL / ADVANCED_COMPONENTS / ENERGY</td><td>DRIED_KELP_BLOCK / COMPARATOR / GLOWSTONE_DUST</td></tr>
+  </table>
+  <p>Відповідність налаштовується у <code>warehouse.resource-items</code>, причому один Material не може представляти два ресурси. Дробові частини виробництва лишаються в SQLite до накопичення цілої одиниці. Якщо всі складські слоти зайняті, надлишок не існує віртуально: він відкидається, а попередження з throttling потрапляє в лог. У unloaded-чанках плагін не вантажить склад примусово; накопичений ledger викладається фізично під час наступної синхронізації loaded-складу.</p>
+  <h3>Команди держав</h3>
+  <p>Повний перелік, включно з персистентними <code>stop/start</code>, зібрано у фінальному розділі <a href="#all-commands">«Усі команди»</a>.</p>
+
+  <h2 id="incoming">Що стається при ударі по NPC-державі</h2>
+  <ol>
+    <li>Перед вибухом ракета або FPV передає location, power і CombatPrincipal у Strategic States.</li>
+    <li>TerritoryMap <code>at(world,x,z)</code> визначає, чи точка лежить у системній території.</li>
+    <li>SQLite schema v3 оновлює <code>state_threats</code> і додає <code>STRATEGIC_IMPACT</code> до журналу.</li>
+    <li>Наземний удар зменшує stability і відсоток кожного ресурсу. Висотна детонація записує threat без економічних втрат.</li>
+    <li>Реальний Bukkit-вибух окремо руйнує блоки й шкодить фізичним Citizen. Їх смерть проходить звичайний persisted lifecycle.</li>
+    <li>Threat балістики важить удвічі більше за power, FPV — один до одного, і згасає з configurable half-life.</li>
+  </ol>
+  <table>
+    <tr><th>Умова</th><th>Реакція</th></tr>
+    <tr><td><code>attacks=OFF</code></td><td>Оборона поблизу дозволена, стратегічна відплата заборонена.</td></tr>
+    <tr><td>Threat нижче порога</td><td>Пам'ять про атакувальника й оборонна готовність.</td></tr>
+    <tr><td>Threat вище порога, attacks ON</td><td>Кандидат для майбутнього Military AI; автоматичний запуск ще не реалізований.</td></tr>
+    <tr><td>Protected owner</td><td>Лише безпосередня самооборона, без війни, переслідування або стратегічного удару.</td></tr>
+  </table>
+
+  <h2 id="territory">TerritoryMap</h2>
+  <p>TerritoryMap зберігає іменовані полігони. Територія може мати кілька незалежних parts і holes. Звичайний власник має <code>ownerKind=PLAYER</code>; автономна держава — <code>STRATEGIC_STATE</code>; імпортована територія без власника має порожній owner.</p>
+  <h3>Жезл і виділення</h3>
+  <ul>
+    <li><b>ПКМ</b> вугільним Territory Wand додає вершину; <b>ЛКМ</b> прибирає останню; <b>Shift+ПКМ</b> показує статус.</li>
+    <li><code>new</code> підсвічується зеленим, <code>extend</code> блакитним, <code>exclude</code> червоним.</li>
+    <li>Підсвітка — client-visible BlockDisplay-площини. Вони перебудовуються лише при зміні selection version.</li>
+    <li><code>block-coverage</code>: outline відсуває контур на пів блока, blocks гарантує повне включення клікнутих блоків, centers проводить межу через центри.</li>
+  </ul>
+  <h3>Overlap</h3>
+  <table>
+    <tr><th>Політика</th><th>Результат</th></tr>
+    <tr><td><code>subtract</code></td><td>Нова форма зберігається, спірна площа вирізається зі старих; можливі holes, split parts або повне видалення старої.</td></tr>
+    <tr><td><code>deny</code></td><td>Операція відхиляється при перетині.</td></tr>
+    <tr><td><code>allow</code></td><td>Обидві геометрії зберігаються з overlap.</td></tr>
+  </table>
+  <h3>BlueMap</h3>
+  <p>Для кожної BlueMap-мапи відповідного світу створюється marker set. ShapeMarker отримує line/fill color, назву, власника, площу, точки й дату. Без BlueMap території не зникають. При пізньому enable BlueMap маркери перебудовуються.</p>
+
+  <p>Повний каталог TerritoryMap разом з аліасами розміщено у фінальному розділі <a href="#all-commands">«Усі команди»</a>.</p>
+
+  <h2 id="service-api">TerritoryMap Bukkit Service API</h2>
+  <p><code>TerritoryMapApi</code> реєструється у Bukkit ServicesManager. BobsterDefence знаходить його через classloader TerritoryMap і reflection, тому не має compile-time залежності від чужого JAR.</p>
+  <table>
+    <tr><th>Метод</th><th>Контракт</th></tr>
+    <tr><td><code>all()</code></td><td>Snapshot усіх територій.</td></tr>
+    <tr><td><code>byId(UUID)</code></td><td>Пошук стабільного territory UUID.</td></tr>
+    <tr><td><code>at(world,x,z)</code></td><td>Територія, що містить координату.</td></tr>
+    <tr><td><code>byOwner(UUID)</code></td><td>Усі території власника.</td></tr>
+    <tr><td><code>createSystemTerritory(...)</code></td><td>Створює лише системну територію з owner kind STRATEGIC_STATE, перевірками геометрії та overlap.</td></tr>
+    <tr><td><code>replaceSystemGeometry(...)</code></td><td>Розширює системну геометрію через union, перевіряє owner і забороняє перетин із чужими землями.</td></tr>
+    <tr><td><code>compactSystemGeometry(...)</code></td><td>Одноразово замінює надмірне чисте базове коло компактнішим; BobsterDefence не застосовує операцію до геометрії із захопленими фрагментами.</td></tr>
+    <tr><td><code>claimSystemChunk(...)</code></td><td>Перетинає цільову геометрію з чанком 16×16, вирізає фрагмент у жертви й атомарно приєднує його до держави.</td></tr>
+    <tr><td><code>transferOwner(...)</code></td><td>Атомарно змінює UUID, display name і owner kind.</td></tr>
+    <tr><td><code>deleteSystemTerritory(territoryId, owner)</code></td><td>Видаляє системну територію лише при збігу власника.</td></tr>
+  </table>
+  <p><code>TerritoryChangedEvent</code> має change type CREATED, GEOMETRY, OWNER, COLOR або DELETED. Всі mutating API повинні викликатися на main thread.</p>
+
+  <h2 id="integration">Взаємодія двох плагінів</h2>
+  <h3>Створення держави</h3>
+  <div class="flow"><span>State Core</span><b>→</b><span>Bobster validation</span><b>→</b><span>createSystemTerritory</span><b>→</b><span>SQLite transaction</span><b>→</b><span>Citizen materialization</span></div>
+  <h3>Удар</h3>
+  <div class="flow"><span>Missile/FPV impact</span><b>→</b><span>TerritoryMap at()</span><b>→</b><span>State UUID</span><b>→</b><span>Threat + economy loss</span><b>+</b><span>Bukkit explosion</span></div>
+  <h3>Protected guild</h3>
+  <p>Команда BobsterDefence знаходить TerritoryMap-територію з <code>ownerKind=PLAYER</code> і зберігає саме owner UUID. Назва використовується тільки для введення й показу. Перейменування території не знімає захист.</p>
+  <div class="card danger"><b>Заборонено:</b> BobsterDefence не редагує <code>territories.yml</code> напряму. Розширення кола й часткове захоплення чанків виконуються тільки через TerritoryMap Service API.</div>
+  <h3>Capture sectors Phase 5 foundation</h3>
+  <p>Кожна TerritoryMap-територія логічно ділиться сіткою <code>capture.sector-size</code>. Стабільний sector UUID обчислюється з territory UUID і координат комірки; контрольна точка лежить у центрі сектора. SQLite schema v6 зберігає початкового власника, поточного контролера, атакуючу державу, прогрес, статус CONTROLLED/CAPTURING/CONTESTED і час останньої присутності.</p>
+  <p>Overlay синхронізується під час старту, reload, створення держави та періодично. Саме створення секторів не змінює TerritoryMap owner і не нарощує progress: це може робити лише CaptureEngine у контексті ACTIVE-війни. Повна передача owner через Service API дозволена лише після контролю всіх секторів.</p>
+  <h3>Війна, контрольна точка і фронт</h3>
+  <p>SQLite schema v7 зберігає attacker state, тип та UUID цілі, territory UUID, статус ACTIVE/CEASEFIRE/ENDED і причину завершення. Одна держава веде не більше однієї наступальної кампанії, а одна територія не має двох одночасних атак. War readiness складається з рівня розвитку, запасу FOOD і stability.</p>
+  <p>CaptureEngine обирає найближчий сектор до Core, а після першого захоплення — лише сусідній із контрольованим фронтом. Фізичні Guard/Soldier/Crossbowman/Commander отримують persisted <code>WAR:&lt;war UUID&gt;</code>, ідуть до точки без примусового завантаження чанків і нарощують progress за відсутності захисника. Власник player-території або військовий Citizen держави-цілі в радіусі переводить точку в CONTESTED. Після grace period progress спадає з configured швидкістю.</p>
+  <p>На 100% синхронно зберігається контролер сектора. Лише коли всі сектори належать нападнику, TerritoryMap отримує нового owner через Service API. Якщо write API недоступний, overlay лишається джерелом фактичного контролю, а в лог записується попередження. <code>attacks off</code> негайно переводить активні війни в CEASEFIRE; додавання target owner до protected-списку робить те саме.</p>
+  <h3>Армії та Defence AI Phase 6 core</h3>
+  <p>SQLite schema v8 зберігає одну StateArmy на державу: режим PEACE/PREPARING/MOBILIZING/ATTACKING/DEFENDING/RETREATING/RECOVERING, active war UUID, simulated position, destination, strength і час останнього оновлення. На рівні 3 держава переводить доступних WORKER у Soldier, Crossbowman і Commander, зберігаючи базового Guard.</p>
+  <p>Під час ACTIVE-війни атакуюча армія отримує ATTACKING, а цільова Strategic State — DEFENDING. Фізичний військовий іде штатним Pathfinder навіть тоді, коли кінцевий сектор ще unloaded. На березі navigator створює фізичний човен, садить у нього Citizen, веде по воді та висаджує на безпечний берег. Перед unloaded-межею NPC атомарно переходить у VIRTUAL, продовжує simulated похід зі швидкістю <code>virtual-speed-blocks-per-minute</code> і матеріалізується лише в безпечній уже loaded-зоні; offline-час не симулюється. Після завершення війни persisted <code>WAR:</code> task очищується й військові повертаються до патруля.</p>
+  <p>На фізичному фронті Soldier, Crossbowman, Guard і Commander залишаються справжніми persistent Pillager. Плагін визначає законну ціль за ACTIVE-війною та передає її через <code>setTarget()</code>, після чого штатний AI Pillager сам прокладає локальний маршрут, переслідує противника, заряджає арбалет і запускає справжню стрілу. Ручного виклику <code>target.damage(...)</code> більше немає. ArmyManager втручається лише у стратегічний марш, човни та unloaded-чанки й не перезаписує шлях, поки моб веде бій.</p>
+  <p>Дозвіл на ціль зберігається окремо для кожного Citizen. Target і damage events пропускаються лише для призначеного ворога; випадкові гравці, свої та союзники не можуть отримати шкоду навіть від стріли, що випадково перетнула їхній hitbox. Після смерті цілі, виходу з дальності, завершення війни або самооборони target очищається, і Citizen повертається до наказу армії чи цивільної роботи.</p>
+  <p>Territorial Defence AI перевіряє сам факт присутності не-союзного гравця, включно з Creative за замовчуванням. Лунає дзвін біля Core, мешканці отримують зброю за роллю: Crossbowman, Guard і оператори — арбалети; Soldier, Commander, Miner і Lumberjack — сокири; Worker, Builder та Engineer — мечі. Арбалетники використовують справжні стріли, що проходять крізь своїх Citizen, а melee-група переслідує ціль і завдає фізичний удар із cooldown. Оборона триває, доки чужинців не залишиться.</p>
+  <p>Удар по незавершеній будівлі переводить її в DAMAGED і зупиняє поточну block queue. Через 60 секунд держава намагається оплатити ремонт пропорційно втраті integrity, скидає перевірку блоків і заново матеріалізує відсутню частину схеми. Повністю DESTROYED споруда відбудовується через 180 секунд за повною вартістю, якщо для неї ще не створено заміну. Без матеріалів або loaded-чанків ремонт залишається в очікуванні й повторюється на наступних simulation ticks.</p>
+  <h3>Розвиток, фабрики й арсенал Phase 7 core</h3>
+  <p>За замовчуванням рівні підвищуються автоматично й ніколи не знижуються: Level 2 при 8 мешканцях, Level 3 при 15, Level 4 при 24 і stability 65, Level 5 при 35 і stability 75. Усі пороги та <code>auto-levels</code> налаштовуються. Коли до housing limit лишається не більше двох місць, ConstructionManager планує наступний HOUSE, але не дублює вже pending/blocked будівництво.</p>
+  <p>Level 1 планує HOUSE, FARM, великий WAREHOUSE, Workshop і Drone Factory, Level 3 — Barracks, Level 4 — Military Factory, Air Defence Site та Missile Factory. Для них встановлюються versioned default vanilla NBT. Будівництво використовує persisted progress, physical warehouse withdrawal, resource transaction, footprint safety та поблокову матеріалізацію.</p>
+  <p>SQLite schema v9 зберігає кількість і production progress для SMALL_ARMS, AIR_DEFENCE_MISSILE, STRIKE_DRONE та BALLISTIC_MISSILE. Кожен рецепт має required level, operational building, resource cost, duration і stock cap. Ресурси та старт progress записуються однією транзакцією: crash не може дати безкоштовний предмет або списати ресурси без виробничого запису. Пошкоджена чи відсутня фабрика ставить таймер на паузу, а offline-час не зараховується.</p>
+  <p>Miner додатково видобуває невелику кількість REDSTONE, Engineer виробляє GUNPOWDER, FUEL та ADVANCED_COMPONENTS. Technology focus змінює швидкість завершення рецепта. Команда <code>/bobster states arsenal &lt;state&gt;</code> показує запаси й активний progress; форма з <code>&lt;item&gt; &lt;amount&gt;</code> є адміністративною корекцією.</p>
+  <h3>Автономні удари Phase 8 core</h3>
+  <p>Держава застосовує зброю лише під час ACTIVE-війни, якщо глобальні атаки дозволені, ціль не protected, відповідна фабрика матеріалізована, у службовій скрині є боєприпас, а оператор фізично присутній. Бюджет атаки має випадковість від −50% до +50%: рівні 1/2/3 запускають базово 5/10/15 дронів, рівень 4 — 50 дронів і 5 балістичних ракет, рівень 5 не має доктринного ліміту й обмежується виробництвом. Спочатку вичерпується дронова фаза; засоби йдуть малими пачками 1/2/3/5/8 кожні 30 секунд, ракети — по 1–2. Цілевказання надає більшу вагу каменю, бетону, механізмам і контейнерам.</p>
+  <p>Drone Operator доступний із Level 1, Air Defence Operator і Missile Operator — із Level 4. На дахах Air Defence Site фізично ставляться три установки доступних класів NASAMS/Patriot/FREYJA, а на Missile Factory — 2 пускові на Level 4 або 4 на Level 5. Ракета створюється в точці реальної пускової та проходить звичайну BallisticTrajectory; знищена або нематеріалізована фабрика припиняє виробництво і пуски.</p>
+  <p>Готова продукція більше не існує лише числом SQLite. Плагін встановлює окрему службову скриню всередині Workshop, Drone Factory, Missile Factory та Air Defence Site. SMALL_ARMS, STRIKE_DRONE, BALLISTIC_MISSILE й AIR_DEFENCE_MISSILE мають власні PDC-предмети. Вміст скрині є фізичним джерелом арсеналу: виробництво додає предмет, ручне вилучення синхронізує запас, а бойова система забирає саме цей предмет.</p>
+  <p>Air Defence Site веде автономне бойове чергування. Якщо біля матеріалізованого комплексу є фізичний Air Defence Operator і в його скрині лежить AIR_DEFENCE_MISSILE, комплекс шукає TNT, FPV та балістику штатним AA scanner і запускає справжній керований Interceptor. CombatPrincipal враховує власну державу та взаємні союзи, тому державна ППО не стріляє по своїх або союзних засобах. Одна ЗКР списується за кожний фактичний пуск.</p>
+  <p><code>MissileLaunchRequest</code> і <code>AutonomousDroneMission</code> відокремлюють запуск від Player та GUI. Власник передається як <code>CombatPrincipal(STRATEGIC_STATE)</code>. Автономні ракети використовують ту саму BallisticTrajectory, hitbox, chunk tickets, damage/interception і explosion pipeline. Автономний FPV використовує ті самі моделі, PDC-позначку, combat identity, бойову частину та ручну/автоматичну ППО; маршрут ведеться прямо до вибраної точки без spectator-оператора.</p>
+  <p>StrategicTargetScanner переглядає тільки вже loaded-чанки цільової TerritoryMap-території. Робота розбивається на main-thread чергу між територіями та не може перевищити <code>scan-blocks-per-tick</code>. Він оцінює поверхневі кластери будівельних блоків, redstone-механізми та контейнери; найкращу точку кешує у SQLite schema v10 і в пам'яті на обмежений час. Якщо кластер не досяг configured score, fallback береться з незахопленої контрольної точки сектора. Вода, лава, bedrock, unloaded-чанки, чужа територія та сектор, уже контрольований нападником, відкидаються. Сканер ніколи не вантажить територію цілком.</p>
+  <p>Автономний FPV виконує ray trace одночасно по блоках і живих сутностях та детонує у найближчому зіткненні. Власний hitbox/model, spectator-гравці, Citizen держави-власника та дружні бойові сутності ігноруються. Перед переходом у наступний чанк перевіряється, що він уже loaded; якщо ні, місія тихо скасовується без вибуху та без примусового chunk load.</p>
+  <p><code>attacks off</code> переводить війни в CEASEFIRE й відповідно до <code>attacks.on-disable</code> прибирає активні автономні дрони та ракети без детонації. Додавання owner до protected-списку завжди припиняє його війну й прибирає всі поточні автономні боєприпаси, щоб уже запущений снаряд не порушив новий захист.</p>
+  <h3>Дипломатія та Target Selection Phase 9</h3>
+  <p>SQLite schema v11 зберігає напрямлені відносини держави до <code>CombatPrincipal</code>: score від -100 до 100, статус ALLIED/FRIENDLY/NEUTRAL/HOSTILE/WAR і час оновлення. Schema v12 виправляє конфлікт із legacy-таблицею <code>state_relations(first_id, second_id, relation, value)</code>: старі state-to-state відносини переносяться в новий формат, тому upgrade більше не спричиняє <code>no column named state_id</code>. Personality формує базову схильність: aggression та expansion погіршують відносини, defence їх пом'якшує, подібний economy focus покращує state-vs-state відносини, а накопичений threat різко знижує score. Активна війна завжди має статус WAR.</p>
+  <p>ALLIED-відносини включені у спільний <code>AllegianceService</code>, тому автоматична ППО й автономні FPV не атакують союзну державну бойову сутність. Адміністративно розпочата війна має пріоритет над старим alliance cache та негайно робить сторони ворожими для бойових перевірок.</p>
+  <p>Після дипломатичної оцінки TargetSelectionAI групує player-території за owner UUID, окремо обробляє STRATEGIC_STATE і відкидає protected, безхазяйні та власні землі. <code>AttackScore</code> враховує distance, polygon area, target army, air-defence ammunition, resources, online activity власника, previous wars, threat/relation score, aggression, expansion та readiness армії нападника. Війна стартує лише для HOSTILE-цілі після проходження наявних minimum level/readiness/policy gates.</p>
+  <p>War readiness тепер порівну складається з development level, FOOD, stability, фактичної сили StateArmy та запасу SMALL_ARMS/STRIKE_DRONE/BALLISTIC_MISSILE. Це не дозволяє формально розвиненій, але беззбройній державі негайно почати наступ.</p>
+  <h3>Мобілізація, хвилі та захоплення чанків</h3>
+  <p>Оголошення війни спочатку створює статус PREPARING на 1200 секунд — один Minecraft-день. Цільова чисельність Level 1–5 дорівнює 10, 20, 30, 40 і 100 військових. Кожен новий Soldier потребує 20 FOOD, 2 IRON і один фізичний SMALL_ARMS зі складу. У state-vs-state війні мобілізуються обидві сторони. Після втрати 80% сили хвиля вважається відбитою, починається нова підготовка; player-кампанія має випадкові 3–7 хвиль.</p>
+  <p>Фронт тепер складається з чанків 16×16. Для початку захоплення в одному чанку мають одночасно стояти щонайменше 10 атакуючих Pillager. За меншої кількості жовтий bossbar показує очікування підмоги; за наявності захисника прогрес contested. Безперервне захоплення триває 7 хвилин. Після 100% TerritoryMap атомарно вирізає саме цей чанк із геометрії ворога та додає його державі нападника. Війна завершується після втрати ціллю всієї території або після відбиття всіх хвиль гравцем.</p>
+
+  <h2 id="storage">Файли й джерела істини</h2>
+  <table>
+    <tr><th>Шлях</th><th>Вміст</th></tr>
+    <tr><td><code>plugins/TerritoryMap/territories.yml</code></td><td>UUID, name, owner, owner-kind, world, parts/holes, кольори, created-at.</td></tr>
+    <tr><td><code>plugins/TerritoryMap/config.yml</code></td><td>Wand, selection highlight, limits, overlap і BlueMap rendering.</td></tr>
+    <tr><td><code>plugins/BobsterDefence/states/states.db</code></td><td>SQLite schema v12: states, citizens, economy/resources, buildings, sectors, wars, armies, arsenal/production, strategic target cache, diplomatic relations, settings, protected owners, threats і event log.</td></tr>
+    <tr><td><code>plugins/BobsterDefence/teams.yml</code></td><td>Динамічні коаліції.</td></tr>
+    <tr><td><code>plugins/BobsterDefence/ballistic-launchers.yml</code></td><td>Постійні UUID, номери, власники, координати та груповий вибір балістичних установок.</td></tr>
+    <tr><td><code>plugins/BobsterDefence/drone-launchers.yml</code></td><td>Постійні UUID, номери, власники, координати та груповий вибір Drone launch system.</td></tr>
+    <tr><td><code>plugins/BobsterDefence/stats.yml</code></td><td>Статистика ППО.</td></tr>
+    <tr><td><code>plugins/BobsterDefence/config.yml</code></td><td>Усі бойові й simulation параметри.</td></tr>
+  </table>
+  <p>TerritoryMap підтримує legacy single-ring <code>points</code> і при наступному save переводить його в <code>parts</code>. BobsterDefence використовує послідовні SQLite migrations; база новішої невідомої версії не відкривається мовчки.</p>
+
+  <h2 id="config">Ключові конфігурації</h2>
+  <h3>TerritoryMap</h3>
+  <ul>
+    <li><code>wand.material/name</code> — предмет і назва PDC-жезла.</li>
+    <li><code>selection.max-points</code>, <code>block-coverage</code>, highlight interval/radius/display cap і матеріали режимів.</li>
+    <li><code>territories.max-per-player</code>, <code>on-overlap</code>, <code>validate-self-intersection</code>.</li>
+    <li><code>bluemap.marker-set-name</code>, <code>shape-y</code>, line width і default RGBA.</li>
+  </ul>
+  <h3>Strategic States</h3>
+  <ul>
+    <li><code>creation</code> — worlds, radius, minimum core distance, names.</li>
+    <li><code>simulation</code> — state/economy/population tick intervals.</li>
+    <li><code>population</code> — starting range, max per state, <code>physical-task-interval-ticks</code> і <code>physical-movement-speed</code>.</li>
+    <li><code>incoming-strikes</code> — ground distance, stability/resource losses, cap, retaliation threshold і threat half-life.</li>
+    <li><code>construction</code> — швидкість поблокової матеріалізації, visual builders, швидкість руху, <code>minimum-building-spacing</code> та захист сторонніх блоків.</li>
+    <li><code>warehouse.resource-items</code> — унікальний фізичний Material для кожного ресурсу держави.</li>
+    <li><code>capture</code> — sector size, fast tick, радіус, тривалість, grace period і decay.</li>
+    <li><code>war</code> — мінімальний рівень/readiness та дозволи state-vs-player/state-vs-state.</li>
+    <li><code>army</code> — virtual speed, частота simulation/navigation/targeting, <code>native-target-range</code>, радіус та пам'ять локальної самооборони. Фізична шкода й темп стрільби визначаються штатним AI Pillager, арбалетом і серверною складністю.</li>
+    <li><code>development</code> — автоматичні рівні, population і stability thresholds.</li>
+    <li><code>production</code> — tick interval, тривалість рецептів і stock caps.</li>
+    <li><code>air-defence.tick-interval-ticks</code> — частота бойового чергування державної ППО.</li>
+    <li><code>drone-launcher.trajectory</code> — висота над ціллю, бічне відхилення коридорів і пауза їх скидання.</li>
+    <li><code>guided-missile</code> — захист і прямий вихід після пуску, елітрова фізика, пальне, окремий chunk-loading, сила вибуху, стійкість до ППО, швидкість і lore Corsair/Barrier.</li>
+    <li><code>ballistic.rocket-camera</code> — увімкнення першої особи ракети та максимальний час очікування всередині установки.</li>
+    <li><code>technologies.enabled/books</code> — глобальний перемикач, оформлення, lore та сторінки дев'яти книг технологій.</li>
+    <li><code>strikes</code> — увімкнення автономних ударів, частота AI, cooldown, lifetime кешу, мінімальний score споруди й <code>scan-blocks-per-tick</code>.</li>
+    <li><code>diplomacy</code> — частота оцінки, пороги HOSTILE/FRIENDLY/ALLIED та мінімальний AttackScore.</li>
+    <li><code>strategic-targeting</code> — старий зарезервований блок сумісності; активні параметри scanner містяться у <code>strikes</code>.</li>
+  </ul>
+  <p>Повний бойовий config FPV, Ballistic, AA, Air Raid, recipes і messages пояснено у вбудованому польовому статуті.</p>
+
+  <h2 id="permissions">Права</h2>
+  <table>
+    <tr><th>Namespace</th><th>Основні права</th></tr>
+    <tr><td>TerritoryMap</td><td><code>territorymap.use</code>, <code>create</code>, <code>delete.own</code>, <code>delete.any</code>, <code>admin</code>.</td></tr>
+    <tr><td>Strategic States</td><td><code>bobsterdefence.states.admin</code>, <code>create</code>, <code>attacks</code>, <code>guildprotection</code>, <code>debug</code>.</td></tr>
+    <tr><td>Technologies</td><td><code>bobsterdefence.technology.give</code> — видача книг; читання й список власних технологій доступні всім.</td></tr>
+    <tr><td>Rocket camera</td><td><code>/rocket</code> доступна всім без окремого permission; показує лише останню власну ракету.</td></tr>
+    <tr><td>Combat</td><td><code>bobsterdefence.use</code>, <code>top</code>, <code>reload</code>, <code>aa.give</code>, <code>ballistic.use/give/list.others</code>, <code>drone.use/give</code>, <code>strike.give</code>, <code>coalition.use</code>, <code>admin.break/use</code>.</td></tr>
+  </table>
+
+  <h2 id="operations">Експлуатація й діагностика</h2>
+  <ul>
+    <li>Перед оновленням копіювати <code>territories.yml</code>, <code>states.db</code>, <code>teams.yml</code> і config-файли.</li>
+    <li>Не замінювати JAR під час польоту ракет/дронів. Нормальне disable прибирає entities і chunk tickets.</li>
+    <li>Для TerritoryMap використовувати <code>/t reload</code>; для BobsterDefence — <code>/bobster reload</code> або <code>/bobster states reload</code>.</li>
+    <li>Якщо держави не створюються, перевірити версію TerritoryMap 2.0.1, його enable status і Service API.</li>
+    <li>Якщо BlueMap дублює імпортовані shape, прибрати старі marker-set blocks із BlueMap configs після <code>/t reload_cfg</code>.</li>
+    <li>Якщо Citizen дублювалися після crash, chunk reconcile має лишити одну entity на persisted Citizen UUID.</li>
+  </ul>
+
+  <h2 id="roadmap">Готове та наступні фази</h2>
+  <table>
+    <tr><th>Статус</th><th>Функціональність</th></tr>
+    <tr><td class="ok">Готово</td><td>Territory Service API, system owner, SQLite foundation, State Core, Citizen virtualization, economy, demographics, incoming player strikes.</td></tr>
+    <tr><td class="ok">Phase 3 extended</td><td>Persisted buildings, деталізовані versioned v2 NBT, Paper/block-state validation, великі спеціалізовані заводи, physical WAREHOUSE із 40 скринями, ledger synchronization, physical withdrawals, footprint safety, progressive materialization, restart resume, visual Pillager-builders та impact integrity.</td></tr>
+    <tr><td class="ok">Phase 4 core</td><td>Автоматичні професії, persisted home/work/task, денний і нічний розклад, робочі інструменти, Paper Pathfinder, stuck recovery, розподілені змінні маршрути та водні переходи армії на човнах без примусового завантаження чанків.</td></tr>
+    <tr><td class="ok">Phase 5 core</td><td>Persisted wars і sector overlay, стабільні control points, readiness/policy gates, фізична присутність, contestation, grace/decay, суміжний front line, ceasefire та передача TerritoryMap owner тільки після повного контролю.</td></tr>
+    <tr><td class="ok">Phase 6 core</td><td>Persisted StateArmy, military professions, ATTACKING/DEFENDING/RECOVERING orders, offline-safe virtual movement, materialization, фізичний melee/ranged combat, combat experience, death lifecycle і локальна Defence AI.</td></tr>
+    <tr><td class="ok">Phase 7 core</td><td>Автоматичні рівні й housing expansion, advanced default NBT facilities, operational-building gates, Engineer resources, transactional persisted arsenal і resumable production.</td></tr>
+    <tr><td class="ok">Phase 8 core</td><td>Player-independent missile/drone request API, Strategic State combat identity, shared interception/explosion pipeline, active-war policy recheck, arsenal consumption, loaded-chunk structure scoring, SQLite v10 expiring cache та safe sector fallback.</td></tr>
+    <tr><td class="ok">Phase 8 hardening</td><td>Fair incremental scanner queue з block budget, block/entity ray trace автономного FPV, friendly filtering, unloaded-chunk abort та негайне скасування автономної зброї при зміні глобальної політики.</td></tr>
+    <tr><td class="ok">Phase 9 core</td><td>SQLite v12 із міграцією legacy relations, personality/threat diplomacy, strategic alliances у combat allegiance, багатофакторний AttackScore, автоматичний вибір player/state territory та readiness з армією й арсеналом.</td></tr>
+    <tr><td class="ok">Phase 10 core</td><td>Автоматичні операторські професії, staffed production, фізичні службові скрині готового озброєння, пріоритет drone-first, операторські пуски справжніх FPV/балістики та державна ППО зі спільним guided-interceptor pipeline.</td></tr>
+    <tr><td class="ok">Phase 11 core</td><td>Керований vanilla Pillager combat: державні дозволені цілі, природне переслідування, заряджання арбалета й справжні стріли, захист своїх/союзників, локальна самооборона та безконфліктна взаємодія зі стратегічною навігацією.</td></tr>
+    <tr><td class="future">Live verification</td><td>Бойові сценарії на Paper-сервері, перевірка upgrade реальної старої SQLite-бази та фінальне балансування значень config.</td></tr>
+  </table>
+  <p class="small">Цей документ описує стан вихідного коду BobsterDefence 3.6.1 і TerritoryMap 2.0.1-SNAPSHOT.</p>
+
+  <h2 id="all-commands">Усі команди</h2>
+  <p>Каталог поділено на загальні команди, FPV-дрони, балістику, ППО й технології, коаліції, Strategic States та TerritoryMap.</p>
+  <div id="command-catalog">
+<section id="manual-commands">
+    <div class="sec-head">
+      <h2>Команди</h2>
+      <span class="tag">усі системи</span>
+    </div>
+    <div class="stack">
+      <h3>BobsterDefence: загальні, статистика й технології</h3>
+      <div class="table-scroll"><table><thead><tr><th>Команда</th><th>Що робить</th><th>Кому</th></tr></thead><tbody>
+        <tr><td class="mono">/bobster [stats]</td><td>власна статистика перехоплень</td><td>усім</td></tr>
+        <tr><td class="mono">/bobster stats &lt;нік&gt;</td><td>статистика іншого гравця</td><td>op</td></tr>
+        <tr><td class="mono">/bobster top</td><td>рейтинг сервера</td><td>усім</td></tr>
+        <tr><td class="mono">/bobster tech list</td><td>вивчені технології</td><td>усім</td></tr>
+        <tr><td class="mono">/bobster tech give &lt;aa｜ballistic｜cruise&gt; &lt;тип&gt; [нік]</td><td>видати книгу технології</td><td>op</td></tr>
+        <tr><td class="mono">/bobster reload</td><td>перечитати конфіг усіх модулів</td><td>op</td></tr>
+      </tbody></table></div>
+
+      <h3>FPV-дрони</h3>
+      <div class="table-scroll"><table><thead><tr><th>Команда</th><th>Що робить</th><th>Кому</th></tr></thead><tbody>
+        <tr><td class="mono">/drone list</td><td>моделі та характеристики</td><td>усім</td></tr>
+        <tr><td class="mono">/drone give &lt;fp1｜p1sun｜d1lduck&gt; [нік] [n]</td><td>видати дрони</td><td>op</td></tr>
+      </tbody></table></div>
+
+      <h3>Автономна дронова пускова</h3>
+      <div class="table-scroll"><table><thead><tr><th>Команда</th><th>Що робить</th><th>Кому</th></tr></thead><tbody>
+        <tr><td class="mono">/drone launcher list [гравець]</td><td>показує постійні номери й координати установок</td><td>власні / op чужі</td></tr>
+        <tr><td class="mono">/drone launcher clear_list</td><td>очищує власний реєстр; наступна нова установка починає нумерацію з #1</td><td>власнику</td></tr>
+        <tr><td class="mono">/drone launcher select &lt;none｜all｜1 2 3 ...&gt;</td><td>скидає вибір або вибирає одну, кілька чи всі установки</td><td>власнику</td></tr>
+        <tr><td class="mono">/drone launcher target &lt;x&gt; &lt;z&gt;</td><td>задає координати всім вибраним установкам</td><td>власнику</td></tr>
+        <tr><td class="mono">/drone launcher target here</td><td>задає поточну позицію як ціль усьому вибору</td><td>власнику</td></tr>
+        <tr><td class="mono">/drone launcher launch</td><td>запускає по одному завантаженому FPV з усіх вибраних установок</td><td>власнику</td></tr>
+        <tr><td class="mono">/drone launcher redstone &lt;on｜off&gt;</td><td>перемикає redstone-режим для всього вибору</td><td>власнику</td></tr>
+        <tr><td class="mono">/drone launcher give [нік] [n]</td><td>видає Drone launch system</td><td>op</td></tr>
+      </tbody></table></div>
+
+      <h3>Керовані крилаті ракети</h3>
+      <div class="table-scroll"><table><thead><tr><th>Команда</th><th>Що робить</th><th>Кому</th></tr></thead><tbody>
+        <tr><td class="mono">/rocket launch</td><td>запускає Corsair або Barrier і передає керування оператору</td><td>власнику</td></tr>
+        <tr><td class="mono">/rocket redstone &lt;on｜off&gt;</td><td>перемикає запуск сигналом редстоуну</td><td>власнику</td></tr>
+        <tr><td class="mono">/rocket give launcher [нік] [n]</td><td>видає Rocket launch system</td><td>op</td></tr>
+        <tr><td class="mono">/rocket give &lt;corsair｜barrier&gt; [нік] [n]</td><td>видає відповідну керовану ракету</td><td>op</td></tr>
+      </tbody></table></div>
+
+      <h3>Балістичні установки й ракети</h3>
+      <div class="table-scroll"><table><thead><tr><th>Команда</th><th>Що робить</th><th>Кому</th></tr></thead><tbody>
+        <tr><td class="mono">/ballistic list [гравець]</td><td>постійні номери та координати установок</td><td>власні / op чужі</td></tr>
+        <tr><td class="mono">/ballistic clear_list</td><td>очистити власний реєстр і почати нумерацію нових установок з #1</td><td>усім</td></tr>
+        <tr><td class="mono">/ballistic select &lt;none｜all｜1 2 3 ...&gt;</td><td>прибрати вибір або вибрати одну, кілька чи всі власні установки</td><td>усім</td></tr>
+        <tr><td class="mono">/ballistic target &lt;x&gt; &lt;z&gt;</td><td>навести весь вибір</td><td>усім</td></tr>
+        <tr><td class="mono">/ballistic target here</td><td>навести весь вибір на свою позицію</td><td>усім</td></tr>
+        <tr><td class="mono">/ballistic launch</td><td>запустити всі готові вибрані установки</td><td>усім</td></tr>
+        <tr><td class="mono">/ballistic info</td><td>статус кожної вибраної установки</td><td>усім</td></tr>
+        <tr><td class="mono">/ballistic mark</td><td>записати ціль із розвідника</td><td>усім</td></tr>
+        <tr><td class="mono">/ballistic give &lt;fp5｜satan｜fp7｜fp9&gt; [нік]</td><td>видати установку</td><td>op</td></tr>
+        <tr><td class="mono">/ballistic rocket &lt;тип&gt; [n] [нік]</td><td>видати ракети</td><td>op</td></tr>
+        <tr><td class="mono">/rocket</td><td>увімкнути або вимкнути вільну камеру всередині ракети</td><td>усім</td></tr>
+      </tbody></table></div>
+
+      <h3>Стаціонарне ППО</h3>
+      <div class="table-scroll"><table><thead><tr><th>Команда</th><th>Що робить</th><th>Кому</th></tr></thead><tbody>
+        <tr><td class="mono">/ppo list</td><td>класи ППО та характеристики</td><td>усім</td></tr>
+        <tr><td class="mono">/ppo give &lt;nasams｜patriot｜freyja&gt; [нік]</td><td>видати ППО</td><td>op</td></tr>
+        <tr><td class="mono">/ppo ammo &lt;тип&gt; [n] [нік]</td><td>видати ракети-перехоплювачі</td><td>op</td></tr>
+      </tbody></table></div>
+
+      <h3>Коаліції</h3>
+      <div class="table-scroll"><table><thead><tr><th>Команда</th><th>Що робить</th><th>Кому</th></tr></thead><tbody>
+        <tr><td class="mono">/coalition create &lt;назва&gt;</td><td>створити коаліцію</td><td>усім</td></tr>
+        <tr><td class="mono">/coalition add &lt;нік&gt;</td><td>додати гравця</td><td>власнику</td></tr>
+        <tr><td class="mono">/coalition kick &lt;нік&gt;</td><td>виключити гравця</td><td>власнику</td></tr>
+        <tr><td class="mono">/coalition leave</td><td>вийти з коаліції</td><td>учаснику</td></tr>
+        <tr><td class="mono">/coalition disband</td><td>розпустити коаліцію</td><td>власнику</td></tr>
+        <tr><td class="mono">/coalition info [назва]</td><td>переглянути склад</td><td>усім</td></tr>
+      </tbody></table></div>
+
+      <h3>Strategic States</h3>
+      <div class="table-scroll"><table><thead><tr><th>Команда</th><th>Що робить</th></tr></thead><tbody>
+        <tr><td class="mono">/bobster states list｜info &lt;state&gt;｜debug &lt;state&gt;</td><td>перелік, інформація та діагностика</td></tr>
+        <tr><td class="mono">/bobster states core give</td><td>видати State Core</td></tr>
+        <tr><td class="mono">/bobster states stop &lt;state&gt;</td><td>записати PAUSED у БД, завершити війни й прибрати фізичних Citizen</td></tr>
+        <tr><td class="mono">/bobster states start &lt;state&gt;</td><td>відновити роботу зупиненої держави</td></tr>
+        <tr><td class="mono">/bobster states attacks on｜off｜status</td><td>глобальна політика нападів</td></tr>
+        <tr><td class="mono">/bobster states guild exclude｜include &lt;owner&gt;｜excluded</td><td>protected-власники територій</td></tr>
+        <tr><td class="mono">/bobster states war list｜start &lt;state&gt; &lt;territory&gt;｜stop &lt;UUID&gt;</td><td>керування війнами</td></tr>
+        <tr><td class="mono">/bobster states arsenal &lt;state&gt; [item amount]</td><td>арсенал і корекція запасу</td></tr>
+        <tr><td class="mono">/bobster states forcelevel &lt;state&gt; &lt;1-5&gt;</td><td>примусовий рівень</td></tr>
+        <tr><td class="mono">/bobster states addresource &lt;state&gt; &lt;resource&gt; &lt;amount&gt;</td><td>додати ресурс</td></tr>
+        <tr><td class="mono">/bobster states destroy &lt;state&gt;｜reload</td><td>знищити державу або перечитати конфіг</td></tr>
+      </tbody></table></div>
+
+      <h3>TerritoryMap</h3>
+      <div class="table-scroll"><table><thead><tr><th>Команда</th><th>Що робить</th></tr></thead><tbody>
+        <tr><td class="mono">/t wand</td><td>видати жезл виділення</td></tr>
+        <tr><td class="mono">/t new &lt;name&gt; [color]｜extend &lt;name&gt;｜exclude &lt;name&gt;</td><td>створення та зміна геометрії</td></tr>
+        <tr><td class="mono">/t apply｜sel｜sel undo｜sel clear</td><td>застосування й керування selection</td></tr>
+        <tr><td class="mono">/t list｜info &lt;name&gt;｜color &lt;name&gt; [line｜fill] &lt;color&gt;</td><td>перегляд та оформлення</td></tr>
+        <tr><td class="mono">/t merge &lt;target&gt; &lt;other&gt; [new-name]｜delete &lt;name&gt;</td><td>об'єднання та видалення</td></tr>
+        <tr><td class="mono">/t reload｜reload_cfg</td><td>перезавантаження та імпорт BlueMap</td></tr>
+      </tbody></table></div>
+      <p>
+        Скорочення: <code>/bd</code> замість <code>/bobster</code>, <code>/fpv</code> або <code>/дрон</code>
+        замість <code>/drone</code>, <code>/arty</code> чи <code>/bl</code> замість <code>/ballistic</code>.
+      </p>
+      <div class="note">
+        <span class="note-label">Для звичайної гри команди не потрібні</span>
+        Усе крафтиться і керується руками. Команди видачі існують для адмінів і тестів;
+        перезавантаження конфігу одне на весь плагін — <code>/bobster reload</code>.
+      </div>
+
+      <h3>Права</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Право</th><th>Дає</th><th>За замовчуванням</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">bobsterdefence.use</td><td>/bobster, /bobster stats</td><td>усім</td></tr>
+            <tr><td class="mono">bobsterdefence.top</td><td>/bobster top</td><td>усім</td></tr>
+            <tr><td class="mono">bobsterdefence.drone.use</td><td>запускати дрони</td><td>усім</td></tr>
+            <tr><td class="mono">bobsterdefence.ballistic.use</td><td>керувати артилерією</td><td>усім</td></tr>
+            <tr><td class="mono">bobsterdefence.strike.give</td><td>видавати нові пускові, Corsair і Barrier</td><td>op</td></tr>
+            <tr><td class="mono">/rocket</td><td>камера останньої власної ракети; окремий дозвіл не потрібен</td><td>усім</td></tr>
+            <tr><td class="mono">bobsterdefence.stats.others</td><td>статистика інших</td><td>op</td></tr>
+            <tr><td class="mono">bobsterdefence.drone.give</td><td>/ppo drone</td><td>op</td></tr>
+            <tr><td class="mono">bobsterdefence.ballistic.give</td><td>/ballistic give, rocket</td><td>op</td></tr>
+            <tr><td class="mono">bobsterdefence.ballistic.list.others</td><td>список установок іншого гравця</td><td>op</td></tr>
+            <tr><td class="mono">bobsterdefence.aa.give</td><td>/aa give, /aa ammo</td><td>op</td></tr>
+            <tr><td class="mono">bobsterdefence.technology.give</td><td>видавати книги технологій</td><td>op</td></tr>
+            <tr><td class="mono">bobsterdefence.coalition.use</td><td>команди коаліцій</td><td>усім</td></tr>
+            <tr><td class="mono">bobsterdefence.admin.break</td><td>ламати чужі установки руками</td><td>op</td></tr>
+            <tr><td class="mono">bobsterdefence.admin.use</td><td>відкривати й керувати чужими установками</td><td>op</td></tr>
+            <tr><td class="mono">bobsterdefence.reload</td><td>/bobster reload</td><td>op</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Захист скринь прав не має — він працює для всіх і завжди.</p>
+    </div>
+  </section>
+  </div>
+</main>
+</div>
+</body>
+</html>

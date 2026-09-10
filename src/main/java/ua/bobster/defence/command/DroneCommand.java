@@ -10,6 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import ua.bobster.defence.BobsterDefence;
 import ua.bobster.defence.drone.DroneType;
+import ua.bobster.defence.strike.StrikeLauncherItem;
 import ua.bobster.defence.util.MessageUtil;
 
 import java.util.ArrayList;
@@ -26,9 +27,11 @@ import java.util.Map;
 public class DroneCommand implements CommandExecutor, TabCompleter {
 
     private final BobsterDefence plugin;
+    private final StrikeLauncherCommand launcherCommand;
 
     public DroneCommand(BobsterDefence plugin) {
         this.plugin = plugin;
+        this.launcherCommand = new StrikeLauncherCommand(plugin, plugin.strike());
     }
 
     @Override
@@ -39,6 +42,7 @@ public class DroneCommand implements CommandExecutor, TabCompleter {
         switch (sub) {
             case "list", "info" -> handleList(sender);
             case "give" -> handleGive(sender, args);
+            case "launcher" -> launcherCommand.execute(sender, StrikeLauncherItem.Kind.DRONE, java.util.Arrays.copyOfRange(args, 1, args.length));
             default -> send(sender, "drone-usage", Map.of());
         }
         return true;
@@ -124,12 +128,15 @@ public class DroneCommand implements CommandExecutor, TabCompleter {
                                       @NotNull String alias, @NotNull String[] args) {
         List<String> result = new ArrayList<>();
         if (args.length == 1) {
-            for (String option : List.of("list", "give")) {
+            for (String option : List.of("list", "give", "launcher")) {
                 if (option.startsWith(args[0].toLowerCase(Locale.ROOT))) {
                     result.add(option);
                 }
             }
             return result;
+        }
+        if (args[0].equalsIgnoreCase("launcher")) {
+            return launcherCommand.tab(sender, StrikeLauncherItem.Kind.DRONE, java.util.Arrays.copyOfRange(args, 1, args.length));
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("give")) {
             for (DroneType type : plugin.drones().types()) {

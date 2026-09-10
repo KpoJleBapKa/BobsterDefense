@@ -3,12 +3,15 @@ package ua.bobster.defence.ballistic;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Trident;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import ua.bobster.defence.combat.CombatPrincipal;
+import ua.bobster.defence.missile.MissilePayload;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -17,27 +20,20 @@ import java.util.UUID;
 /**
  * Балістична ракета в польоті.
  * <p>
- * Корпус — сутність {@link Trident}: вона вже має витягнуту форму й повертається за напрямком
- * руху, тож без жодного ресурспака виглядає як ракета. Вибухова механіка тризуба не
- * використовується взагалі — рух і детонацію повністю веде плагін.
- * <p>
  * Поруч летить невидима стійка-hitbox. Вона потрібна рівно для одного: стріли з лука
- * <b>не стикаються зі снарядами</b>, тож у тризуб влучити неможливо, і ручне ППО проти
+ * <b>не стикаються зі снарядами</b>, тож у корпус влучити неможливо, і ручне ППО проти
  * балістики без неї просто перестало б працювати. Автоматична ППО в ній не має потреби —
  * її перехоплювачі рахують відстань самі.
  */
 public class BallisticMissile {
 
-    /** Стартовий поштовх угору — щоб перший тік ракета не провела «лежачи». */
-    private static final double LAUNCH_NUDGE = 0.1D;
-
     private final BallisticManager manager;
     private final LauncherTier tier;
     private final BallisticTrajectory trajectory;
     private final UUID missileId;
-    private final UUID shooter;
+    private final CombatPrincipal owner;
+    private final MissilePayload payload;
     private final Location impact;
-
     private final Trident trident;
     private final ArmorStand hitbox;
 
@@ -45,6 +41,7 @@ public class BallisticMissile {
     private Vector heading;
     private MissileState state = MissileState.LAUNCH;
     private double progress;
+    private double travelled;
     private int ticks;
     private int hits;
     private boolean ending;
@@ -57,12 +54,13 @@ public class BallisticMissile {
     private final Set<Long> tickets = new HashSet<>();
 
     BallisticMissile(BallisticManager manager, LauncherTier tier, BallisticTrajectory trajectory,
-                     UUID shooter, Location start, Location impact) {
+                     CombatPrincipal owner, MissilePayload payload, Location start, Location impact) {
         this.manager = manager;
         this.tier = tier;
         this.trajectory = trajectory;
         this.missileId = UUID.randomUUID();
-        this.shooter = shooter;
+        this.owner = owner;
+        this.payload = payload;
         this.impact = impact;
         this.previous = start.clone();
         this.heading = new Vector(0, 1, 0);
@@ -76,9 +74,8 @@ public class BallisticMissile {
             missile.setGravity(false);
             missile.setInvulnerable(true);
             missile.setDamage(0.0D);
-            // Одразу задаємо курс угору, інакше перший тік ракета проведе «лежачи».
-            missile.setVelocity(new Vector(0, LAUNCH_NUDGE, 0));
-            manager.tagMissile(missile.getPersistentDataContainer(), missileId, shooter, tier, impact);
+            missile.setVelocity(new Vector(0, 0.1D, 0));
+            manager.tagMissile(missile.getPersistentDataContainer(), missileId, owner, tier, impact);
         });
         this.hitbox = world.spawn(start, ArmorStand.class, stand -> {
             stand.setInvisible(true);
@@ -90,7 +87,9 @@ public class BallisticMissile {
             stand.setSilent(true);
             stand.getPersistentDataContainer().set(
                     manager.hitboxKey(), PersistentDataType.BYTE, (byte) 1);
+            manager.plugin().combatIdentity().write(stand.getPersistentDataContainer(), owner);
         });
+        holdChunks(start);
     }
 
     // ─────────────────────────────── доступ ───────────────────────────────
@@ -104,7 +103,19 @@ public class BallisticMissile {
     }
 
     public UUID shooter() {
-        return shooter;
+        return owner.id();
+    }
+
+    public CombatPrincipal owner() {
+        return owner;
+    }
+
+    public MissilePayload payload() {
+        return payload;
+    }
+
+    public Vector heading() {
+        return heading.clone();
     }
 
     /** Сутність, по якій наводиться ППО. */
@@ -126,6 +137,10 @@ public class BallisticMissile {
 
     public boolean isEnding() {
         return ending;
+    }
+
+    public boolean interceptable() {
+        return ticks >= manager.interceptionGraceTicks();
     }
 
     public Location currentLocation() {
@@ -195,7 +210,6 @@ public class BallisticMissile {
             return false;
         }
         if (!trident.isValid() || trident.isDead()) {
-            // Сутність зникла (вивантаження, стороннє видалення) — не лишаємо «привида» в реєстрі.
             manager.detonate(this, currentLocation(), false);
             return false;
         }
@@ -206,7 +220,8 @@ public class BallisticMissile {
         }
 
         Location next = damaged ? fall() : advance();
-        state = damaged ? MissileState.DESCENT : manager.stateFor(progress);
+        travelled += previous.distance(next);
+        state = damaged ? MissileState.DESCENT : manager.stateFor(progress, travelled);
 
         if (ticks > 3) {
             Location obstacle = terrainHit(previous, next);
@@ -237,7 +252,8 @@ public class BallisticMissile {
 
     /** Просування по кривій зі швидкістю поточної фази. */
     private Location advance() {
-        progress += trajectory.advance(manager.speedFor(state, tier));
+        double blocksPerTick = manager.speedFor(state, tier);
+        progress += state == MissileState.LAUNCH ? trajectory.advanceFrom(progress, blocksPerTick) : trajectory.advance(blocksPerTick);
         return trajectory.pointAt(progress);
     }
 
@@ -248,21 +264,6 @@ public class BallisticMissile {
         return previous.clone().add(fallVelocity);
     }
 
-    /**
-     * Рух ракети.
-     * <p>
-     * Позицію задає <b>швидкість</b>, а не телепорт, і це принципово. Тризуб — снаряд, а снаряд
-     * і на сервері, і на клієнті щотіку сам перераховує кут корпусу зі своєї швидкості. Поки ми
-     * возили його телепортом, цей розрахунок отримував майже нульовий вектор і клав корпус
-     * горизонтально, тобто ракета летіла боком — хоч би що ми писали в кут при телепорті.
-     * <p>
-     * Тепер швидкість — це справжнє зміщення за тік. Рушій сам переносить ракету рівно туди,
-     * куди веде крива, а кут корпусу і на сервері, і на клієнті виходить той самий і без нашої
-     * участі — так само, як у звичайного кинутого тризуба.
-     * <p>
-     * Вектор рахуємо від <b>фактичного</b> положення сутності, а не від точки, де вона мала б
-     * бути: якщо рушій зсунув її трохи інакше, наступний тік це сам компенсує.
-     */
     private void move(Location next) {
         Location actual = trident.getLocation();
         Vector delta = next.toVector().subtract(actual.toVector());
@@ -295,7 +296,7 @@ public class BallisticMissile {
 
         for (Long key : wanted) {
             if (tickets.add(key)) {
-                world.addPluginChunkTicket((int) (key >> 32), key.intValue(), manager.plugin());
+                manager.retainChunk(world, key);
             }
         }
         // Пройдені чанки відпускаємо одразу: інакше далекий постріл лишав би за собою
@@ -304,7 +305,7 @@ public class BallisticMissile {
             if (wanted.contains(key)) {
                 return false;
             }
-            world.removePluginChunkTicket((int) (key >> 32), key.intValue(), manager.plugin());
+            manager.releaseChunk(world, key);
             return true;
         });
     }
@@ -326,7 +327,7 @@ public class BallisticMissile {
         }
         World world = previous.getWorld();
         for (Long key : tickets) {
-            world.removePluginChunkTicket((int) (key >> 32), key.intValue(), manager.plugin());
+            manager.releaseChunk(world, key);
         }
         tickets.clear();
     }
@@ -338,14 +339,21 @@ public class BallisticMissile {
         if (length < 1.0E-4D) {
             return null;
         }
-        RayTraceResult result = world.rayTraceBlocks(
-                from, delta.multiply(1.0D / length), length, FluidCollisionMode.NEVER, true);
+        RayTraceResult result = world.rayTraceBlocks(from, delta.multiply(1.0D / length), length, FluidCollisionMode.NEVER, true);
         return result == null ? null : result.getHitPosition().toLocation(world);
     }
 
     void cleanup() {
+        manager.camera().onMissileEnd(this);
         releaseChunks();
         trident.remove();
         hitbox.remove();
+    }
+
+    Trident detachSpent() {
+        manager.camera().onMissileEnd(this);
+        releaseChunks();
+        hitbox.remove();
+        return trident;
     }
 }

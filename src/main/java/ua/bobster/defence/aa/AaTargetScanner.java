@@ -9,6 +9,7 @@ import org.bukkit.entity.TNTPrimed;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.Vector;
 import ua.bobster.defence.BobsterDefence;
+import ua.bobster.defence.combat.CombatPrincipal;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -54,17 +55,25 @@ public class AaTargetScanner {
      */
     public List<AaTarget> scan(Location center, AaTier tier, UUID launcherOwner,
                                Predicate<AaTarget> accept, int limit) {
+        return scan(center, tier, launcherOwner == null ? null : CombatPrincipal.player(launcherOwner), false, accept, limit);
+    }
+
+    public List<AaTarget> scan(Location center, AaTier tier, CombatPrincipal launcherOwner, Predicate<AaTarget> accept, int limit) {
+        return scan(center, tier, launcherOwner, false, accept, limit);
+    }
+
+    public List<AaTarget> scan(Location center, AaTier tier, CombatPrincipal launcherOwner, boolean targetElytraPlayers, Predicate<AaTarget> accept, int limit) {
         World world = center.getWorld();
         if (world == null) {
             return List.of();
         }
         List<AaTarget> found = new ArrayList<>();
         for (Entity entity : world.getNearbyEntities(center, tier.range(), tier.verticalRange(), tier.range())) {
-            AaTarget target = classify(entity);
+            AaTarget target = classify(entity, targetElytraPlayers);
             if (target == null || !target.isValid() || !accept.test(target)) {
                 continue;
             }
-            if (!friendlyFire && teams.friendly(launcherOwner, target.owner())) {
+            if (!friendlyFire && friendly(launcherOwner, target)) {
                 continue;
             }
             if (!inZone(center, target.location(), tier)) {
@@ -99,17 +108,37 @@ public class AaTargetScanner {
 
     /** @return ціль потрібного типу або null, якщо ця сутність ППО не цікавить */
     public AaTarget classify(Entity entity) {
-        if (targetTnt && entity instanceof TNTPrimed tnt) {
-            return new AaTarget(entity, AaTarget.Type.VANILLA_TNT, ownerOfTnt(tnt));
+        return classify(entity, false);
+    }
+
+    public AaTarget classify(Entity entity, boolean targetElytraPlayers) {
+        if (targetElytraPlayers && entity instanceof Player player && player.isGliding() && player.getGameMode() != org.bukkit.GameMode.CREATIVE && player.getGameMode() != org.bukkit.GameMode.SPECTATOR) {
+            return new AaTarget(player, AaTarget.Type.ELYTRA_PLAYER, CombatPrincipal.player(player.getUniqueId()));
         }
-        UUID tagged = taggedOwner(entity);
-        if (targetDrones && plugin.drones() != null && plugin.drones().sessionByDrone(entity) != null) {
+        if (targetTnt && entity instanceof TNTPrimed tnt) {
+            return new AaTarget(entity, AaTarget.Type.VANILLA_TNT, principalOfTnt(tnt));
+        }
+        CombatPrincipal tagged = plugin.combatIdentity().read(entity.getPersistentDataContainer());
+        if (targetDrones && plugin.drones() != null && plugin.drones().isDrone(entity)) {
             return new AaTarget(entity, AaTarget.Type.FPV_DRONE, tagged);
         }
-        if (targetMissiles && plugin.ballistic() != null && plugin.ballistic().projectileOf(entity) != null) {
-            return new AaTarget(entity, AaTarget.Type.BALLISTIC_MISSILE, tagged);
+        if (targetMissiles && plugin.ballistic() != null) {
+            ua.bobster.defence.ballistic.BallisticMissile missile = plugin.ballistic().projectileOf(entity);
+            if (missile != null && missile.interceptable()) {
+                return new AaTarget(entity, AaTarget.Type.BALLISTIC_MISSILE, tagged);
+            }
+        }
+        if (targetMissiles && plugin.strike() != null && plugin.strike().isGuidedBody(entity) && !plugin.strike().isGuidedLaunchProtected(entity)) {
+            return new AaTarget(entity, AaTarget.Type.GUIDED_MISSILE, plugin.strike().guidedOwner(entity));
         }
         return null;
+    }
+
+    private boolean friendly(CombatPrincipal launcherOwner, AaTarget target) {
+        if (launcherOwner == null || target.principal() == null) {
+            return false;
+        }
+        return plugin.allegiance().friendly(launcherOwner, target.principal());
     }
 
     /** Наші снаряди носять UUID власника прямо в PDC — саме на цьому тримається «свій/чужий». */
@@ -126,12 +155,16 @@ public class AaTargetScanner {
         }
     }
 
-    private UUID ownerOfTnt(TNTPrimed tnt) {
+    private CombatPrincipal principalOfTnt(TNTPrimed tnt) {
+        CombatPrincipal identity = plugin.combatIdentity().read(tnt.getPersistentDataContainer());
+        if (identity != null) {
+            return identity;
+        }
         UUID tagged = taggedOwner(tnt);
         if (tagged != null) {
-            return tagged;
+            return CombatPrincipal.player(tagged);
         }
-        return tnt.getSource() instanceof Player player ? player.getUniqueId() : null;
+        return tnt.getSource() instanceof Player player ? CombatPrincipal.player(player.getUniqueId()) : null;
     }
 
     /**

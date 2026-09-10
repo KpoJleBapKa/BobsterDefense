@@ -18,6 +18,7 @@ import java.util.List;
 public record AaTier(String id,
                      int level,
                      String displayName,
+                     int zoneSize,
                      int range,
                      int verticalRange,
                      int maxTargets,

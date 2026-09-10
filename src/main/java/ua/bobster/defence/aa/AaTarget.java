@@ -2,6 +2,7 @@ package ua.bobster.defence.aa;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
+import ua.bobster.defence.combat.CombatPrincipal;
 
 import java.util.UUID;
 
@@ -17,17 +18,23 @@ public class AaTarget {
     public enum Type {
         VANILLA_TNT,
         FPV_DRONE,
-        BALLISTIC_MISSILE
+        BALLISTIC_MISSILE,
+        GUIDED_MISSILE,
+        ELYTRA_PLAYER
     }
 
     private final Entity entity;
     private final Type type;
-    private final UUID owner;
+    private final CombatPrincipal principal;
 
     public AaTarget(Entity entity, Type type, UUID owner) {
+        this(entity, type, owner == null ? null : CombatPrincipal.player(owner));
+    }
+
+    public AaTarget(Entity entity, Type type, CombatPrincipal principal) {
         this.entity = entity;
         this.type = type;
-        this.owner = owner;
+        this.principal = principal;
     }
 
     public Entity entity() {
@@ -39,7 +46,11 @@ public class AaTarget {
     }
 
     public UUID owner() {
-        return owner;
+        return principal == null ? null : principal.id();
+    }
+
+    public CombatPrincipal principal() {
+        return principal;
     }
 
     public UUID id() {

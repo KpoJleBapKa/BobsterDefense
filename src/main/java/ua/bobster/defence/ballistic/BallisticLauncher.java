@@ -26,12 +26,14 @@ public class BallisticLauncher {
     private final NamespacedKey cooldownKey;
     private final NamespacedKey reconKey;
     private final NamespacedKey ownerKey;
+    private final NamespacedKey redstoneKey;
 
     BallisticLauncher(Block block, BallisticItem item, NamespacedKey tierKey, NamespacedKey targetXKey,
                       NamespacedKey targetZKey, NamespacedKey displayKey, NamespacedKey cooldownKey,
-                      NamespacedKey reconKey, NamespacedKey ownerKey) {
+                      NamespacedKey reconKey, NamespacedKey ownerKey, NamespacedKey redstoneKey) {
         this.reconKey = reconKey;
         this.ownerKey = ownerKey;
+        this.redstoneKey = redstoneKey;
         this.block = block;
         this.item = item;
         this.tierKey = tierKey;
@@ -138,6 +140,15 @@ public class BallisticLauncher {
         mutate(pdc -> pdc.set(ownerKey, PersistentDataType.STRING, uuid.toString()));
     }
 
+    public boolean redstoneEnabled() {
+        PersistentDataContainer pdc = container();
+        return pdc != null && pdc.getOrDefault(redstoneKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
+    }
+
+    public void redstoneEnabled(boolean enabled) {
+        mutate(pdc -> pdc.set(redstoneKey, PersistentDataType.BYTE, enabled ? (byte) 1 : (byte) 0));
+    }
+
     /** Час (millis), до якого установка лишається без розвідника після втрати попереднього. */
     public long reconCooldown() {
         PersistentDataContainer pdc = container();
@@ -177,10 +188,10 @@ public class BallisticLauncher {
      *
      * @return true, якщо ракета знайшлася
      */
-    public boolean consumeAmmo(LauncherTier tier) {
+    public ItemStack consumeAmmo(LauncherTier tier) {
         Dispenser dispenser = state(false);
         if (dispenser == null || tier == null) {
-            return false;
+            return null;
         }
         Inventory inventory = dispenser.getInventory();
         for (int slot = 0; slot < inventory.getSize(); slot++) {
@@ -188,10 +199,12 @@ public class BallisticLauncher {
             if (!item.isRocketFor(stack, tier)) {
                 continue;
             }
+            ItemStack consumed = stack.clone();
+            consumed.setAmount(1);
             stack.setAmount(stack.getAmount() - 1);
             inventory.setItem(slot, stack.getAmount() <= 0 ? null : stack);
-            return true;
+            return consumed;
         }
-        return false;
+        return null;
     }
 }

@@ -2,6 +2,8 @@
 #   BobsterDefence — конфігурація
 # ═══════════════════════════════════════════════
 
+config-version: 3
+
 # Захист скринь від вибухів.
 # Блокує ТІЛЬКИ руйнування вибухом. Ламати руками/киркою можна як завжди.
 chest-protection:
@@ -108,12 +110,12 @@ fpv-drone:
     fp1:
       name: "<gold><bold>🛩 FPV-ДРОН «FP-1»</bold></gold>"
       material: TNT
-      speed: 0.6             # важкий, розігнатися не може
+      speed: 0.75            # важкий, розігнатися не може
       # boost-speed = speed → Ctrl нічого не дає: у FP-1 прискорення немає взагалі
-      boost-speed: 0.6
+      boost-speed: 0.75
       max-distance: 1500
       flight-time: 240
-      explosion-power: 4.0   # ≈ один ванільний TNT
+      explosion-power: 5.0
       player-damage: 0       # без протипіхотного бонусу — тут працює сам вибух
       player-damage-radius: 0
       lore:
@@ -144,12 +146,12 @@ fpv-drone:
     p1sun:
       name: "<yellow><bold>🛩 FPV-ДРОН «P1-Sun»</bold></yellow>"
       material: TNT
-      speed: 1.0             # найшвидший з трьох
-      boost-speed: 1.4
-      max-distance: 400
+      speed: 2.0             # найшвидший з трьох
+      boost-speed: 2.8
+      max-distance: 500
       flight-time: 60
       explosion-power: 1.0   # майже не чіпає забудову
-      player-damage: 100     # ...але гравця в епіцентрі вбиває напевно
+      player-damage: 80
       player-damage-radius: 4
       lore:
         - "<dark_gray>Легкий протипіхотний дрон."
@@ -176,11 +178,11 @@ fpv-drone:
     d1lduck:
       name: "<white><bold>🛩 FPV-ДРОН «D1L-Duck»</bold></white>"
       material: TNT
-      speed: 0.75
-      boost-speed: 1.1
-      max-distance: 600
+      speed: 2.0
+      boost-speed: 2.0
+      max-distance: 1000
       flight-time: 120
-      explosion-power: 2.0   # половина TNT
+      explosion-power: 2.5
       player-damage: 0
       player-damage-radius: 0
       lore:
@@ -217,9 +219,76 @@ fpv-drone:
 #
 # Важливо про потужність: 4.0 ≈ один звичайний TNT. Радіус вибуху росте нелінійно,
 # тому найважча ракета — 8.0, а не 4×5=20. Інакше один постріл зносив би пів бази.
+drone-launcher:
+  trajectory:
+    height-above-target: 40.0
+    lane-offset: 3.0
+    lane-reset-seconds: 2.0
+
+missile-payload:
+  potion:
+    radius-per-power: 3.0
+    minimum-intensity: 0.25
+  empty:
+    burn-seconds: 15.0
+    smoke-seconds: 60.0
+
+guided-missile:
+  enabled: true
+  launch-protection-seconds: 2.0
+  launch-control-delay-seconds: 0.5
+  flight:
+    physics-reference-speed: 0.9
+    engine-response: 0.12
+    steering-response: 0.055
+    powered-climb-min-speed-multiplier: 0.65
+    powered-dive-max-speed-multiplier: 1.3
+  chunk-loading:
+    look-ahead-seconds: 3.0
+    client-ready-distance: 48.0
+    send-view-distance: 10
+    unready-speed-multiplier: 0.2
+    recovery-step: 0.08
+    slowdown-step: 0.2
+  types:
+    corsair:
+      name: "<aqua><bold>🚀 Corsair guided missile</bold>"
+      fuel-seconds: 15.0
+      explosion-power: 5.0
+      hits-to-intercept: 1
+      cooldown-seconds: 0
+      speed: 3.0
+      lore:
+        - "<gray>Крилата керована ракета для Rocket launch system."
+        - ""
+        - "<gray>⛽ Пальне: <white>{fuel}</white> с"
+        - "<gray>📡 Дальність: <white>без обмежень</white>"
+        - "<gray>💥 Потужність: <white>{power}</white>"
+        - "<gray>🛡 Збиття ППО: <white>{hits}</white> влучання"
+        - "<gray>⚡ Швидкість: <white>{speed}</white> блока/тік"
+    barrier:
+      name: "<gold><bold>🚀 Barrier guided missile</bold>"
+      fuel-seconds: 30.0
+      explosion-power: 7.0
+      hits-to-intercept: 1
+      cooldown-seconds: 0
+      speed: 3.6
+      lore:
+        - "<gray>Далекобійна крилата керована ракета."
+        - ""
+        - "<gray>⛽ Пальне: <white>{fuel}</white> с"
+        - "<gray>📡 Дальність: <white>без обмежень</white>"
+        - "<gray>💥 Потужність: <white>{power}</white>"
+        - "<gray>🛡 Збиття ППО: <white>{hits}</white> влучання"
+        - "<gray>⚡ Швидкість: <white>{speed}</white> блока/тік"
+
 ballistic:
   enabled: true
   recipes-enabled: true
+
+  rocket-camera:
+    enabled: true
+    waiting-timeout-seconds: 300
 
   # Затримка перед пуском, секунд (3... 2... 1... ПУСК)
   countdown-seconds: 3
@@ -229,7 +298,6 @@ ballistic:
     name: BLOCK_NOTE_BLOCK_BASEDRUM
     volume: 1.0
     pitch: 0.55
-
 
   # Плашка над установкою видима лише зблизька.
   # Клієнт множить це на свій повзунок «Entity Distance», тож на 50% зникне вдвічі ближче.
@@ -245,20 +313,19 @@ ballistic:
     speed: 3.0              # базова швидкість, якщо у ракети не задана своя
     detonate-on-terrain: true  # підрив, якщо дуга зачепила гору по дорозі
 
-  # Сама ракета: корпус — сутність Trident, вона витягнута і сама повертається
-  # за напрямком руху, тож летить носом уперед без жодного ресурспака.
+  # Корпус ракети — сутність Trident, яка рухається швидкістю та ванільно повертається за напрямком польоту.
   missile:
-    # Межі фаз польоту у частках пройденого шляху:
-    # 0..launch-phase — вертикальний старт, далі розгін, далі балістична ділянка,
-    # після ballistic-phase — пікірування на ціль.
-    launch-phase: 0.12
+    # Старт має однакову фізичну довжину та швидкість за будь-якої дальності цілі.
+    launch-distance-blocks: 8.0
     ascent-phase: 0.35
     ballistic-phase: 0.70
+    interception-grace-ticks: 60
 
     # Множники швидкості відносно швидкості ракети: старт повільніший, пікірування швидше.
     # Вище 1.3 піднімати не варто: у найшвидшої ракети (3.0) це дає рівно 3.9 бл/тік —
     # межу, яку витримує пакет швидкості. За нею клієнт починає відставати від сервера.
-    launch-speed-multiplier: 0.5
+    launch-speed-multiplier: 0.2
+    ascent-speed-multiplier: 0.75
     descent-speed-multiplier: 1.3
 
     # Радіус, у якому зараховується удар. У пікіруванні ракета проходить кілька блоків
@@ -277,6 +344,7 @@ ballistic:
       enabled: true
       radius: 1          # 1 = квадрат 3×3 чанки навколо точки
       look-ahead: 48     # на скільки блоків уперед по курсу дивитися (48 = 3 чанки)
+      start-hold-seconds: 30  # чанк установки тримається від команди пуску й повторно від фактичного старту
 
     # Реактивний слід — малюється ПОЗАДУ ракети вздовж вектора руху.
     # Частинки надсилаються з прапорцем «показувати здалеку»: інакше клієнт малює їх
@@ -587,7 +655,7 @@ air-defence-system:
   enabled: true
   recipes-enabled: true
 
-  # Зараховувати перехоплення власнику установки в /ppo stats
+  # Зараховувати перехоплення власнику установки в /bobster stats
   count-in-stats: true
 
 
@@ -604,6 +672,7 @@ air-defence-system:
     ballistic-missile: true
     # false — не стріляти по снарядах власника установки та його сторони (див. teams нижче)
     friendly-fire: false
+    elytra-player-damage: 20.0
     # Установка не стріляє крізь гори. Тому ППО має сенс ставити на дахах і баштах.
     require-line-of-sight: true
     # Скільки марних влучань по одній ракеті система робить, перш ніж перейти на інші цілі.
@@ -633,16 +702,17 @@ air-defence-system:
     nasams:
       level: 1
       name: "<gray><bold>🛡 NASAMS air defense</bold></gray>"
-      range: 40              # зона ~80×80
-      vertical-range: 56
+      zone-size: 32
+      range: 20
+      vertical-range: 80
       max-targets: 1
       scan-interval: 4
       fire-cooldown: 300     # один пуск на 15 с
-      interceptor-speed: 2.0
+      interceptor-speed: 1.5
       # Шанс упоратися з балістичною ракетою. Кидається ОДИН раз на ракету:
       # серії ні на що не впливають — після десяти збитих одинадцята має ті самі шанси.
       # Дронів і TNT це не стосується взагалі, по них ППО працює як завжди.
-      missile-hit-chance: 0.2   # приблизно 2 ракети з 10
+      missile-hit-chance: 0.25
       lore:
         - "<dark_gray>Стаціонарна установка ППО."
         - ""
@@ -684,13 +754,14 @@ air-defence-system:
     patriot:
       level: 2
       name: "<white><bold>🛡 Patriot air defense</bold></white>"
-      range: 48              # зона ~96×96
-      vertical-range: 64
+      zone-size: 64
+      range: 32
+      vertical-range: 120
       max-targets: 2
       scan-interval: 4
-      fire-cooldown: 200     # один пуск на 10 с
+      fire-cooldown: 100
       interceptor-speed: 2.5
-      missile-hit-chance: 0.6   # приблизно 6 ракет з 10
+      missile-hit-chance: 0.5
       lore:
         - "<dark_gray>Посилена установка ППО."
         - ""
@@ -728,13 +799,14 @@ air-defence-system:
     freyja:
       level: 3
       name: "<gold><bold>🛡 FREYJA air defense</bold></gold>"
-      range: 64              # зона ~128×128
-      vertical-range: 80
+      zone-size: 96
+      range: 48
+      vertical-range: 160
       max-targets: 3
       scan-interval: 3
       fire-cooldown: 40      # один пуск на 2 с
-      interceptor-speed: 4.0
-      missile-hit-chance: 0.9   # приблизно 9 ракет з 10
+      interceptor-speed: 3.5
+      missile-hit-chance: 0.8
       lore:
         - "<dark_gray>Важка установка ППО."
         - ""
@@ -812,6 +884,174 @@ air-raid:
     # Порожньо = головний канал DiscordSRV. Інакше — ім'я каналу з його config.yml.
     channel: ""
 
+strategic-states:
+  enabled: true
+  max-states: 5
+
+  creation:
+    allowed-worlds:
+      - world
+    starting-territory-radius: 48
+    minimum-core-distance: 256
+    level-radii:
+      level-1: 48
+      level-2: 64
+      level-3: 80
+      level-4: 96
+      level-5: 112
+    maximum-emergency-radius: 160
+    emergency-expansion-step: 16
+    names:
+      - Iron Dominion
+      - Azure Republic
+      - Verdant Union
+      - Golden Pact
+      - Violet Crown
+
+  attacks:
+    enabled-on-first-start: false
+    on-disable:
+      cancel-active-invasions: true
+      cancel-active-drones: true
+      destroy-flying-missiles: false
+      force-retreat: true
+
+  simulation:
+    state-tick-seconds: 10
+    economy-tick-seconds: 30
+    population-tick-seconds: 60
+    virtual-simulation: true
+
+  population:
+    starting-min: 4
+    starting-max: 6
+    max-per-state: 150
+    physical-task-interval-ticks: 5
+    physical-movement-speed: 0.35
+
+  development:
+    auto-levels: true
+    level-2-population: 8
+    level-3-population: 15
+    level-4-population: 24
+    level-4-stability: 65.0
+    level-5-population: 35
+    level-5-stability: 75.0
+
+  construction:
+    blocks-per-second: 4
+    visual-builders: true
+    builder-movement-speed: 0.35
+    template-provider: PAPER_STRUCTURE
+    prevent-player-block-overwrite: true
+    virtual-duration-seconds: 300
+    minimum-building-spacing: 6
+    allow-terrain-overwrite: true
+    repair-delay-seconds: 60
+    rebuild-delay-seconds: 180
+
+  warehouse:
+    resource-items:
+      wood: OAK_LOG
+      stone: COBBLESTONE
+      iron: IRON_INGOT
+      coal: COAL
+      food: BREAD
+      gunpowder: GUNPOWDER
+      redstone: REDSTONE
+      fuel: DRIED_KELP_BLOCK
+      advanced-components: COMPARATOR
+      energy: GLOWSTONE_DUST
+
+  capture:
+    sector-size: 16
+    tick-interval-ticks: 5
+    capture-radius: 16
+    capture-time-seconds: 420
+    minimum-attackers: 10
+    bossbar-radius: 128
+    grace-period-seconds: 30
+    decay-per-second: 2.0
+
+  war:
+    minimum-state-level: 1
+    minimum-readiness: 0.80
+    allow-state-vs-player: true
+    allow-state-vs-state: true
+    mobilization-seconds: 1200
+    recruits-per-second: 2
+    mobilization-food-per-soldier: 20
+    mobilization-iron-per-soldier: 2
+
+  army:
+    tick-interval-ticks: 20
+    navigation-interval-ticks: 5
+    virtual-speed-blocks-per-minute: 80
+    combat-tick-interval-ticks: 5
+    native-target-range: 32.0
+    local-defence-radius: 16.0
+    local-defence-seconds: 15
+    defend-against-creative: true
+    melee-cooldown-millis: 1000
+    creative-shot-cooldown-millis: 2000
+
+  production:
+    tick-interval-ticks: 100
+    recipes:
+      small-arms:
+        seconds: 15
+        cap: 200
+      air-defence-missile:
+        seconds: 180
+        cap: 12
+      strike-drone:
+        seconds: 30
+        cap: 128
+      ballistic-missile:
+        seconds: 180
+        cap: 32
+
+  air-defence:
+    tick-interval-ticks: 5
+
+  strikes:
+    enabled: true
+    tick-interval-ticks: 100
+    salvo-interval-seconds: 30
+    target-cache-seconds: 900
+    minimum-structure-score: 80
+    scan-blocks-per-tick: 2048
+
+  diplomacy:
+    tick-interval-ticks: 1200
+    hostile-threshold: -25.0
+    friendly-threshold: 30.0
+    allied-threshold: 60.0
+    minimum-attack-score: 55.0
+
+  incoming-strikes:
+    maximum-ground-distance: 16
+    ballistic-stability-loss-per-power: 2.0
+    drone-stability-loss-per-power: 1.0
+    ballistic-resource-loss-per-power: 0.015
+    drone-resource-loss-per-power: 0.0075
+    maximum-resource-loss: 0.25
+    retaliation-threat: 20.0
+    threat-half-life-hours: 24.0
+
+  strategic-targeting:
+    priority-materials:
+      - STONE
+      - STONE_BRICKS
+      - DEEPSLATE
+      - DEEPSLATE_BRICKS
+      - COBBLESTONE
+      - SMOOTH_STONE
+    minimum-cluster-size: 80
+    fallback-to-random-target: true
+
+  protected-owner-uuids: []
+
 # Сторони. Потрібні, щоб ППО не збивала снаряди своїх.
 # Гравці, яких тут немає, вважаються сам за себе: власна ППО не б'є по власних снарядах,
 # але по снарядах будь-кого іншого — б'є.
@@ -825,11 +1065,126 @@ stats:
   enabled: true
   # Автозбереження stats.yml, у секундах (0 = тільки при вимкненні плагіна)
   autosave-seconds: 300
-  # Скільки гравців показувати в /ppo top
+  # Скільки гравців показувати в /bobster top
   top-size: 10
 
 # Повідомлення. Формат — MiniMessage (<red>, <gradient:...>, <bold> тощо).
 # Плейсхолдери описані біля кожного рядка.
+technologies:
+  enabled: true
+  books:
+    ballistic:
+      fp5:
+        name: "<gray><bold>📖 ТЕХНОЛОГІЯ FP-5</bold></gray>"
+        title: "FP-5: базова балістика"
+        author: "Bobster Research Division"
+        lore:
+          - "<dark_gray>Технічний пакет I рівня"
+          - "<gray>Відкриває FP-5 та ракети FP-5"
+          - ""
+          - "<yellow>ПКМ — вивчити й поглинути книгу"
+        pages:
+          - "<gray><bold>ПАКЕТ FP-5</bold></gray>\n\nПольова пускова система малої дальності. Призначена для першого опанування керованої балістики."
+          - "<dark_red><bold>ДОПУСК</bold></dark_red>\n\nВідкриває виробництво установки FP-5 та сумісної ракети. Боєприпаси інших систем не підходять."
+      satan:
+        name: "<white><bold>📖 ТЕХНОЛОГІЯ SATAN</bold></white>"
+        title: "Satan: посилена балістика"
+        author: "Bobster Research Division"
+        lore:
+          - "<dark_gray>Технічний пакет II рівня"
+          - "<gray>Відкриває Satan та ракети Satan"
+          - ""
+          - "<yellow>ПКМ — вивчити й поглинути книгу"
+        pages:
+          - "<white><bold>ПАКЕТ SATAN</bold></white>\n\nПосилена балістична платформа з важчою бойовою частиною та збільшеною дальністю."
+          - "<dark_red><bold>ДОПУСК</bold></dark_red>\n\nВідкриває виробництво установки Satan і повного циклу ракет Satan."
+      fp7:
+        name: "<yellow><bold>📖 ТЕХНОЛОГІЯ FP-7</bold></yellow>"
+        title: "FP-7: оперативний комплекс"
+        author: "Bobster Research Division"
+        lore:
+          - "<dark_gray>Технічний пакет III рівня"
+          - "<gray>Відкриває FP-7 та ракети FP-7"
+          - ""
+          - "<yellow>ПКМ — вивчити й поглинути книгу"
+        pages:
+          - "<yellow><bold>ПАКЕТ FP-7</bold></yellow>\n\nОперативно-тактичний комплекс для ударів на великій відстані. Ракета витримує складніше перехоплення."
+          - "<dark_red><bold>ДОПУСК</bold></dark_red>\n\nВідкриває установку FP-7 та ракету FP-7. Для складання установки потрібна попередня платформа."
+      fp9:
+        name: "<red><bold>📖 ТЕХНОЛОГІЯ FP-9</bold></red>"
+        title: "FP-9: стратегічний комплекс"
+        author: "Bobster Research Division"
+        lore:
+          - "<dark_gray>Технічний пакет IV рівня"
+          - "<gray>Відкриває FP-9 та ракети FP-9"
+          - ""
+          - "<yellow>ПКМ — вивчити й поглинути книгу"
+        pages:
+          - "<red><bold>ПАКЕТ FP-9</bold></red>\n\nСтратегічна система максимальної дальності. Доступ дозволено лише сертифікованим операторам."
+          - "<dark_red><bold>ДОПУСК</bold></dark_red>\n\nВідкриває FP-9 та її ракету. У виробництві ракети використовується справжня ракета FP-7."
+    aa:
+      nasams:
+        name: "<gray><bold>📘 ТЕХНОЛОГІЯ NASAMS</bold></gray>"
+        title: "NASAMS: базове ППО"
+        author: "Bobster Air Defence Bureau"
+        lore:
+          - "<dark_gray>Технічний пакет ППО I рівня"
+          - "<gray>Відкриває NASAMS та ракети NASAMS"
+          - ""
+          - "<yellow>ПКМ — вивчити й поглинути книгу"
+        pages:
+          - "<gray><bold>ПАКЕТ NASAMS</bold></gray>\n\nАвтоматизований комплекс ближньої протиповітряної оборони для боротьби з TNT, FPV та балістикою."
+          - "<dark_aqua><bold>ДОПУСК</bold></dark_aqua>\n\nВідкриває установку NASAMS і спеціальні ракети-перехоплювачі NASAMS."
+      patriot:
+        name: "<white><bold>📘 ТЕХНОЛОГІЯ PATRIOT</bold></white>"
+        title: "Patriot: посилене ППО"
+        author: "Bobster Air Defence Bureau"
+        lore:
+          - "<dark_gray>Технічний пакет ППО II рівня"
+          - "<gray>Відкриває Patriot та ракети Patriot"
+          - ""
+          - "<yellow>ПКМ — вивчити й поглинути книгу"
+        pages:
+          - "<white><bold>ПАКЕТ PATRIOT</bold></white>\n\nПосилений комплекс із супроводом двох цілей та підвищеною ефективністю проти балістики."
+          - "<dark_aqua><bold>ДОПУСК</bold></dark_aqua>\n\nВідкриває установку Patriot і ракети Patriot. NASAMS-боєприпаси несумісні."
+      freyja:
+        name: "<gold><bold>📘 ТЕХНОЛОГІЯ FREYJA</bold></gold>"
+        title: "FREYJA: важке ППО"
+        author: "Bobster Air Defence Bureau"
+        lore:
+          - "<dark_gray>Технічний пакет ППО III рівня"
+          - "<gray>Відкриває FREYJA та ракети FREYJA"
+          - ""
+          - "<yellow>ПКМ — вивчити й поглинути книгу"
+        pages:
+          - "<gold><bold>ПАКЕТ FREYJA</bold></gold>\n\nВажка багатоканальна система ППО. Веде три цілі й створює найбільшу зону прикриття."
+          - "<dark_aqua><bold>ДОПУСК</bold></dark_aqua>\n\nВідкриває установку FREYJA та її високошвидкісні ракети-перехоплювачі."
+    cruise:
+      corsair:
+        name: "<aqua><bold>📗 ТЕХНОЛОГІЯ CORSAIR</bold></aqua>"
+        title: "Corsair: керований ракетний комплекс"
+        author: "Bobster Guided Weapons Bureau"
+        lore:
+          - "<dark_gray>Технічний пакет крилатої зброї I рівня"
+          - "<gray>Відкриває Rocket launch system і Corsair"
+          - ""
+          - "<yellow>ПКМ — вивчити й поглинути книгу"
+        pages:
+          - "<aqua><bold>ПАКЕТ CORSAIR</bold></aqua>\n\nБазова керована крилата ракета з ручним наведенням оператора та запасом пального на 15 секунд роботи двигуна."
+          - "<dark_aqua><bold>ДОПУСК</bold></dark_aqua>\n\nВідкриває виробництво універсальної Rocket launch system і ракети Corsair."
+      barrier:
+        name: "<light_purple><bold>📕 ТЕХНОЛОГІЯ BARRIER</bold></light_purple>"
+        title: "Barrier: далекобійна крилата зброя"
+        author: "Bobster Guided Weapons Bureau"
+        lore:
+          - "<dark_gray>Технічний пакет крилатої зброї II рівня"
+          - "<gray>Відкриває ракету Barrier"
+          - ""
+          - "<yellow>ПКМ — вивчити й поглинути книгу"
+        pages:
+          - "<light_purple><bold>ПАКЕТ BARRIER</bold></light_purple>\n\nКерована ракета зі збільшеною швидкістю, запасом пального на 30 секунд і важчою бойовою частиною."
+          - "<dark_purple><bold>ДОПУСК</bold></dark_purple>\n\nВідкриває виробництво ракети Barrier. Для її запуску використовується Rocket launch system із пакета Corsair."
+
 messages:
   prefix: "<gray>[<gold><bold>ППО</bold></gold><gray>]</gray> "
 
@@ -843,6 +1198,7 @@ messages:
   drone-launched: "<green>🛩 {name} у повітрі. <gray>WASD — рух, Space/Shift — висота."
   # {name}, {bar}, {percent}, {seconds}, {distance}, {max-distance}
   drone-hud: "<gold>{name}</gold> <dark_gray>|</dark_gray> <green>{bar}</green> <white>{percent}%</white> <dark_gray>|</dark_gray> <yellow>🔋 {seconds}s</yellow> <dark_gray>|</dark_gray> <aqua>📡 {distance}м</aqua>"
+  strike-guided-hud: "<gold>{name}</gold> <dark_gray>|</dark_gray> <yellow>⛽ {fuel}с</yellow> <dark_gray>|</dark_gray> <aqua>📡 {distance}м</aqua> <dark_gray>|</dark_gray> <white>⚡ {speed} бл/т</white>"
   drone-detonated: "<red>💥 Дрон детоновано."
   drone-signal-lost: "<red>📡 СИГНАЛ ВТРАЧЕНО <gray>— дрон самознищився."
   drone-battery-empty: "<red>⚠ ЖИВЛЕННЯ ВИЧЕРПАНО <gray>— дрон самознищився."
@@ -854,7 +1210,7 @@ messages:
   drone-disabled: "<red>Модуль FPV-дрона вимкнено."
   drone-spectator: "<red>Запустити дрон зі spectator неможливо."
   drone-unknown-type: "<red>Невідомий тип дрона: <white>{type}</white>"
-  drone-usage: "<gray>Використання: <white>/drone list</white> або <white>/drone give <fp1|p1sun|d1lduck> [нік] [кількість]"
+  drone-usage: "<gray>Дрони:\n<white>/drone list</white> — моделі\n<white>/drone give <fp1|p1sun|d1lduck> [нік] [кількість]</white> — видати дрони\n<white>/drone launcher <target|launch|redstone|give></white> — дронова пускова"
   drone-list-header: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>
 <gold><bold>  🛩 FPV-ДРОНИ</bold></gold>
 <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
@@ -879,6 +1235,7 @@ messages:
   ballistic-target-help: "<gray>Наведення: <white>/ballistic target <x> <z></white>, <white>/ballistic target here</white>\n<gray>кнопка «ЦІЛЬ» на панелі (розвідник), або присів + ПКМ по карті в рамці."
   # {x}, {z}, {seconds}
   ballistic-launched: "<red><bold>🚀 ПУСК</bold></red> <gray>— ціль <white>X {x}, Z {z}</white>, підліт ~<white>{seconds}</white>с"
+  ballistic-launch-obstructed: "<red>Пусковий коридор перекрито твердим блоком — ракета детонує над установкою."
   ballistic-impact: "<gray>💥 Влучання: <white>X {x}, Z {z}</white>"
   ballistic-intercepted-shooter: "<red>☠ Ракету перехоплено ППО в районі <white>X {x}, Z {z}</white>"
   ballistic-damaged: "<yellow>⚠ Ракета вціліла, але втратила керування — вона падає."
@@ -897,9 +1254,57 @@ messages:
   ballistic-map-wall-only: "<red>Наведення працює лише по картах на вертикальній стіні."
   ballistic-unknown-tier: "<red>Невідома установка: <white>{tier}</white>"
   ballistic-given: "<green>Видано <white>{name}</white> гравцю <white>{player}</white>."
-  ballistic-usage: "<gray>Використання: <white>/ballistic <target <x> <z>|target here|launch|info|mark|give <тип>|rocket <тип>>"
+  ballistic-usage: "<gray>Використання: <white>/ballistic <list [гравець]|clear_list|select <none|all|номери...>|target <x> <z>|target here|launch|info|mark|give <тип>|rocket <тип>>"
+  rocket-camera-attached: "<green>🚀 Камеру прикріплено до ракети. <gray>Shift або <white>/rocket</white> — повернутися."
+  rocket-camera-waiting: "<yellow>🚀 Камера всередині установки. <gray>Очікування пуску до <white>{seconds}</white>с. <white>/ballistic launch</white> — пуск, Shift або <white>/rocket</white> — вийти."
+  rocket-camera-launched: "<red><bold>🚀 ПУСК</bold></red> <gray>Камеру переведено на ніс ракети."
+  rocket-camera-returned: "<green>Камеру ракети вимкнено. <gray>Тебе повернуто у початкову позицію."
+  rocket-camera-timeout: "<yellow>Очікування запуску завершено. <gray>Тебе повернуто у початкову позицію."
+  rocket-camera-no-rocket: "<red>Немає активної ракети або вибраної установки. <gray>Клікни по установці чи запусти власну ракету."
+  rocket-camera-disabled: "<red>Камеру ракети вимкнено в конфігурації."
+  rocket-camera-busy: "<red>Камера недоступна під час іншого spectator-сеансу."
   # {name}, {x}, {z}, {distance}, {range}, {ammo}, {need}, {power}, {hits}
   ballistic-info: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>\n{name}\n<gray>🎯 Ціль: <white>X {x}, Z {z}</white> <dark_gray>({distance}м / {range}м)</dark_gray>\n<gray>🚀 Ракет: <white>{ammo}</white>\n<gray>💥 Потужність: <white>{power}</white> <dark_gray>|</dark_gray> <gray>🛡 Збиття: <white>{hits}</white> влучань\n<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+  ballistic-info-numbered: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>\n<gold>Установка #{number}</gold> {name}\n<gray>🎯 Ціль: <white>X {x}, Z {z}</white> <dark_gray>({distance}м / {range}м)</dark_gray>\n<gray>🚀 Ракет: <white>{ammo}</white>\n<gray>💥 Потужність: <white>{power}</white> <dark_gray>|</dark_gray> <gray>🛡 Збиття: <white>{hits}</white> влучань\n<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+  ballistic-list-header: "<gold>Балістичні установки {player}: <white>{count}</white>"
+  ballistic-list-entry: "<gray>#{number}</gray> <white>{type}</white> <dark_gray>— {location}"
+  ballistic-list-empty: "<yellow>У гравця немає зареєстрованих балістичних установок."
+  ballistic-list-cleared: "<green>Список очищено. <gray>Видалено записів: <white>{count}</white>. Наступна встановлена пускова отримає номер <white>#1</white>."
+  ballistic-select-usage: "<yellow>/ballistic select <none|all|1 2 3 ...>"
+  ballistic-select-missing: "<red>Установку #{number} не знайдено серед твоїх."
+  ballistic-selected-many: "<green>Вибрано установок: <white>{count}</white> <gray>(#{numbers})"
+  ballistic-selected-none: "<green>Вибір балістичних установок очищено."
+  strike-not-selected: "<red>Спочатку клікни по потрібній пусковій установці."
+  strike-target-missing: "<red>Для дронової установки спочатку задай ціль."
+  strike-target-set: "<green>Ціль дронової установки: <white>X {x}, Z {z}</white>."
+  strike-drone-ammo-missing: "<red>У відсіку немає жодного FPV-дрона."
+  strike-guided-ammo-missing: "<red>У відсіку немає ракети Corsair або Barrier."
+  strike-guided-unknown-type: "<red>Невідома керована ракета: <white>{type}</white>. <gray>Доступні: corsair, barrier."
+  strike-out-of-range: "<red>Ціль перебуває поза дальністю завантаженого дрона."
+  strike-drone-launched: "<green>Дрон запущено автономним маршрутом."
+  strike-drone-panel-cooldown: "<yellow>Кнопка запуску перезаряджається одну секунду."
+  strike-drone-list-header: "<gold>Дронові установки гравця <white>{player}</white>: <white>{count}</white>"
+  strike-drone-list-entry: "<gray>#{number} <white>{location}</white>"
+  strike-drone-list-empty: "<yellow>У тебе немає зареєстрованих дронових установок."
+  strike-drone-list-cleared: "<green>Список дронових установок очищено: <white>{count}</white>. Наступна нова установка отримає номер #1."
+  strike-drone-select-usage: "<gray>/drone launcher select <none|all|1 2 3 ...>"
+  strike-drone-select-missing: "<red>Дронову установку #{number} не знайдено."
+  strike-drone-selected-none: "<green>Активний вибір дронових установок скинуто. Команди знову діятимуть на останню відкриту установку."
+  strike-drone-selected-many: "<green>Обрано дронові установки: <white>{numbers}</white> <gray>({count})."
+  strike-drone-launch-group: "<gray>Команду запуску прийняли <white>{count}/{selected}</white> дронових установок."
+  strike-drone-target-group: "<green>Ціль X <white>{x}</white>, Z <white>{z}</white> задано для <white>{count}</white> дронових установок."
+  strike-drone-redstone-group: "<green>Redstone-режим <white>{state}</white> встановлено для <white>{count}</white> дронових установок."
+  strike-guided-launched: "<red><bold>Крилату ракету запущено.</bold> <gray>Керуй напрямком мишкою."
+  strike-guided-launch-blocked: "<red>Пусковий коридор перекрито. Звільни простір перед установкою."
+  strike-guided-fuel-empty: "<yellow>Пальне вичерпано. Двигун вимкнено — ракета продовжує планерувати."
+  strike-guided-busy: "<red>Ти вже керуєш іншою крилатою ракетою."
+  strike-guided-no-target: "<yellow>Corsair і Barrier керуються оператором у реальному часі та не потребують заданої цілі."
+  strike-redstone-on: "<green>Запуск від редстоуну увімкнено."
+  strike-redstone-off: "<red>Запуск від редстоуну вимкнено."
+  strike-item-given: "<green>Видано <white>{amount}</white> предметів гравцю <white>{player}</white>."
+  ballistic-launch-group: "<gray>Команду запуску прийняли <white>{count}/{selected}</white> установок."
+  ballistic-redstone-on: "<green>Запуск від редстоуну увімкнено."
+  ballistic-redstone-off: "<red>Запуск від редстоуну вимкнено."
 
   # ─── розвідувальний дрон ───
   # {minutes}, {range}
@@ -944,9 +1349,16 @@ messages:
   ballistic-no-target-short: "NOT SET"
 
   # ─── панель керування ───
-  ballistic-gui-title: "<dark_gray>🚀 Пульт керування"
+  ballistic-gui-title: "<dark_gray>🚀 Пульт {number}"
+  ballistic-gui-redstone-on-name: "<green><bold>⚡ РЕДСТОУН: УВІМКНЕНО</bold>"
+  ballistic-gui-redstone-off-name: "<red><bold>⚡ РЕДСТОУН: ВИМКНЕНО</bold>"
+  ballistic-gui-redstone-lore:
+    - "<gray>Клік — змінити режим."
+    - "<gray>При сигналі установка запустить"
+    - "<gray>ракету за поточними координатами."
   ballistic-gui-status-name: "<gold><bold>СТАТУС</bold>"
   ballistic-gui-status-lore:
+    - "<gray>Номер установки: <white>{number}"
     - "<gray>Дальність: <white>{range}</white> блоків"
     - "<gray>Потужність: <white>{power}</white>"
     - "<gray>Збиття ППО: <white>{hits}</white> влучань"
@@ -970,6 +1382,21 @@ messages:
   aa-placed: "<green>Установку <white>{name}</white> розгорнуто. <gray>Зона {zone}×{zone}. Не забудь зарядити ракети."
   # {name}, {zone}, {range}, {vertical}, {targets}, {cooldown}, {ammo}, {owner}
   aa-info: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>\n{name}\n<gray>📡 Зона: <white>{zone}×{zone}</white> <dark_gray>(радіус {range}, висота {vertical})</dark_gray>\n<gray>🎯 Цілей одночасно: <white>{targets}</white> <dark_gray>|</dark_gray> <gray>⏱ Темп: <white>{cooldown}</white>с\n<gray>🏹 Боєзапас: <white>{ammo}</white>\n<gray>👤 Власник: <white>{owner}</white>\n<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+  aa-gui-title: "<dark_gray>🛡 Пульт ППО"
+  aa-gui-ammo-name: "<gold><bold>Боєкомплект перехоплювачів"
+  aa-gui-ammo-lore:
+    - "<gray>Система: <white>{name}"
+    - "<gray>Заряджено: <white>{ammo}"
+    - ""
+    - "<yellow>Натисни, щоб відкрити сховище ракет."
+  aa-gui-elytra-on: "<green><bold>🪽 ЕЛІТРИ: УВІМКНЕНО</bold>"
+  aa-gui-elytra-off: "<red><bold>🪽 ЕЛІТРИ: ВИМКНЕНО</bold>"
+  aa-gui-elytra-lore:
+    - "<gray>Клік — змінити режим."
+    - "<gray>Свої та члени коаліції не атакуються."
+    - "<gray>Боєзапас: <white>{ammo}</white>"
+  aa-elytra-on: "<green>Перехоплення чужих гравців на елітрах увімкнено."
+  aa-elytra-off: "<red>Перехоплення гравців на елітрах вимкнено."
   aa-unknown-tier: "<red>Невідома установка ППО: <white>{tier}</white>"
   aa-given: "<green>Видано <white>{name}</white> гравцю <white>{player}</white>."
   aa-ammo-given: "<green>Видано <white>{amount}</white> × {name} <green>гравцю <white>{player}</white>."
@@ -983,6 +1410,16 @@ messages:
   # {id}, {name}, {zone}, {targets}, {cooldown}, {ammo}
   aa-list-line: "{name} <dark_gray>(<white>{id}</white>)</dark_gray>
 <gray>  📡 <white>{zone}×{zone}</white> · 🎯 <white>{targets}</white> · ⏱ <white>{cooldown}</white>с · 🔥 {ammo}"
+
+  technology-unlocked: "<green><bold>📚 ТЕХНОЛОГІЮ ВИВЧЕНО</bold></green> <dark_gray>—</dark_gray> <white>{name}</white>\n<gray>Відкрито крафт установки та відповідних ракет."
+  technology-known: "<yellow>Технологія <white>{name}</white> вже вивчена. <gray>Книгу не витрачено."
+  technology-given: "<green>Видано книгу технології <white>{name}</white> гравцю <white>{player}</white>."
+  technology-unknown: "<red>Невідома технологія: <white>{category}:{tier}</white>"
+  technology-usage: "<gray>Технології:\n<white>/bobster tech list</white> <dark_gray>—</dark_gray> <gray>вивчені технології\n<white>/bobster tech give <aa|ballistic|cruise> <tier> [нік]</white> <dark_gray>—</dark_gray> <gray>видати книгу"
+  bobster-usage: "<gray>BobsterDefence:\n<white>/bobster stats [нік]</white> — статистика\n<white>/bobster top</white> — рейтинг\n<white>/bobster tech <list|give></white> — технології\n<white>/bobster states ...</white> — Strategic States\n<white>/bobster reload</white> — перечитати конфіг"
+  technology-list-header: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>\n<gold><bold>  📚 ВИВЧЕНІ ТЕХНОЛОГІЇ</bold></gold>\n<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+  technology-list-line: "<green>✔</green> <white>{name}</white>"
+  technology-list-empty: "<gray>Жодної військової технології ще не вивчено. FPV-дрони доступні без технологій."
 
   # ─── голограма над ППО ───
   # {name}, {status}, {ammo}
@@ -1016,8 +1453,8 @@ messages:
   # ─── захист установок ───
   # {owner}
   ballistic-gone: "<red>Установки тут більше немає."
-  ballistic-not-owner: "<red>Установка належить <white>{owner}</white>. <gray>Руками її не розібрати — тільки знищити ракетою чи дроном."
-  aa-not-owner: "<red>ППО належить <white>{owner}</white>. <gray>Руками її не розібрати — тільки знищити ракетою чи дроном."
+  ballistic-not-owner: "<red>Установка належить <white>{owner}</white>. <gray>Перегляд, керування та ручне руйнування заборонені."
+  aa-not-owner: "<red>ППО належить <white>{owner}</white>. <gray>Перегляд, керування та ручне руйнування заборонені."
 
   # ─── розвідник: відмови ───
   recon-spawn-failed: "<red>Не вдалося підняти розвідника. <gray>Деталі — у консолі сервера."
@@ -1039,4 +1476,4 @@ messages:
   reloaded: "<green>Конфігурацію перезавантажено."
   no-permission: "<red>Немає прав."
   unknown-player: "<red>Гравця <white>{player}</white> не знайдено."
-  usage: "<gray>Використання: <white>/ppo [stats|top|list|give|ammo|reload]"
+  usage: "<gray>Використання: <white>/ppo [stats|top|list|give|ammo|tech|reload]"

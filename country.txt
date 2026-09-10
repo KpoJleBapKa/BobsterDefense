@@ -29,7 +29,7 @@
 * захопленням чужих територій;
 * обороною власних територій;
 * використанням озброєння BobsterDefence;
-* взаємодією з територіями `TerritoryMap-1.5.0.jar`.
+* взаємодією з територіями `TerritoryMap-1.6.0.jar`.
 
 Базовим NPC населення є `Pillager`.
 
@@ -46,6 +46,37 @@ NPC не повинні самостійно вирішувати глобаль
 * яку територію захоплювати.
 
 Це відповідальність центрального AI держави.
+
+---
+
+### 1.1 Термінологія та модель власника TerritoryMap
+
+У межах цього ТЗ термін `гільдія` означає гравця, який володіє однією або кількома територіями TerritoryMap.
+
+Окремої сутності або окремого плагіна гільдій немає.
+
+Ідентичність гільдії:
+
+```text
+guildId = UUID гравця-власника TerritoryMap
+guildName = актуальний owner-name гравця
+territories = усі території TerritoryMap з тим самим owner UUID
+```
+
+TerritoryMap owner повинен мати тип:
+
+```text
+PLAYER
+STRATEGIC_STATE
+```
+
+Термін `гільдія` застосовується тільки до `PLAYER`. Системний власник `STRATEGIC_STATE` представляє NPC-державу та не маскується під реального гравця.
+
+Уся логіка, збереження, blacklist, війни та дипломатія повинні використовувати UUID власника. Ім'я використовується лише для відображення й пошуку в командах, оскільки гравець може змінити нік.
+
+Якщо один гравець має кілька територій, вони вважаються землями однієї гільдії. Захоплення ведеться окремо для кожної території та її секторів, але дипломатичні відносини й заборона атак застосовуються до UUID власника загалом.
+
+Якщо територія не має `owner UUID`, вона не є допустимою ціллю автоматичної війни до явного рішення адміністратора.
 
 ---
 
@@ -331,13 +362,7 @@ materialize()
 Команда:
 
 ```text
-/bd state core give
-```
-
-або:
-
-```text
-/bd state createitem
+/bd states core give
 ```
 
 Предмет:
@@ -354,6 +379,10 @@ PDC:
 bobsterdefence:item_type = state_core
 ```
 
+PDC існує лише на предметі. Після встановлення BEDROCK зв'язок Core із державою зберігається в SQLite за `world + x + y + z`, оскільки BEDROCK не є TileState і не має власного PDC.
+
+Повторне встановлення, повторний `BlockPlaceEvent` або рестарт не повинні створювати дубль держави. Координати Core мають унікальний індекс у сховищі.
+
 Після встановлення:
 
 ```text
@@ -361,6 +390,19 @@ StrategicStateManager.createState(...)
 ```
 
 створюється нова держава.
+
+Перед створенням перевіряються:
+
+* право `bobsterdefence.states.create`;
+* ліміт `max-states`;
+* дозволений світ;
+* мінімальна відстань до інших State Core;
+* відсутність перетину стартової зони з територією гравця;
+* доступність write API TerritoryMap.
+
+Стартова територія створюється через `TerritoryMapHook` як територія системного власника: `territoryName = state_<short UUID>`, `ownerUuid = state UUID`, `ownerName = state display name`, `ownerKind = STRATEGIC_STATE`. Технічна назва відповідає обмеженню TerritoryMap `[A-Za-z0-9_-]{1,32}`, а display name держави може містити пробіли. Форма і радіус задаються конфігом. Якщо TerritoryMap або його write API недоступні, нову державу створювати заборонено, але вже збережені держави завантажуються в безпечному режимі без експансії та війни.
+
+`StateIdentityFactory` автоматично обирає унікальний стандартний колір і унікальну назву з конфігурованого списку. Якщо вільної назви немає, використовується шаблон `State-<short UUID>`. За ліміту 5 держав кожна активна держава повинна мати окремий колір.
 
 ---
 
@@ -681,6 +723,12 @@ CommandCenter
 
 Необхідно використовувати готові шаблони.
 
+Обов'язковий базовий формат — vanilla structure `.nbt`, який завантажується через Paper Structure API без зовнішніх залежностей. Підтримка Sponge `.schem` через WorldEdit або FAWE може бути додана як опційний адаптер.
+
+Уся робота з шаблонами проходить через `StructureTemplateAdapter`. Реалізація вибирається за форматом файла та доступними плагінами.
+
+Базові `.nbt` шаблони входять до BobsterDefence.jar і копіюються в data folder при першому запуску. Адміністратор може замінити їх власними файлами. Якщо потрібний шаблон відсутній або пошкоджений, держава не списує ресурси й не створює незавершувану будівлю. Операція переходить у стан `BLOCKED`, а причина виводиться в debug та `states.log`.
+
 Наприклад:
 
 ```text
@@ -690,16 +738,16 @@ plugins/BobsterDefence/states/schematics/
 Структура:
 
 ```text
-house_01.schem
-house_02.schem
-farm_01.schem
-warehouse_01.schem
-mine_01.schem
-barracks_01.schem
-factory_01.schem
-missile_factory_01.schem
-drone_factory_01.schem
-air_defence_01.schem
+house_01.nbt
+house_02.nbt
+farm_01.nbt
+warehouse_01.nbt
+mine_01.nbt
+barracks_01.nbt
+factory_01.nbt
+missile_factory_01.nbt
+drone_factory_01.nbt
+air_defence_01.nbt
 ```
 
 ---
@@ -763,6 +811,10 @@ building.materialized = false
 ```text
 materialized = true
 ```
+
+Матеріалізація повинна бути ідемпотентною. Будівля має збережений footprint, перелік потрібних чанків і стани `PLANNED`, `BUILDING`, `COMPLETE_VIRTUAL`, `MATERIALIZING`, `MATERIALIZED`, `BLOCKED`.
+
+Перед початком будівництва footprint резервується. Перед фізичною вставкою повторно перевіряються сторонні блоки та захист території. Заборонено перезаписувати будівлі гравців. Будівля, що перетинає кілька чанків, матеріалізується один раз після доступності всіх потрібних чанків, з лімітом змін блоків за тік.
 
 ---
 
@@ -850,21 +902,42 @@ BobsterDefence повинен отримувати:
 
 ```text
 territoryId
-guildId
-guildName
+ownerUuid
+ownerName
+ownerKind
 world
-polygon/regions
-owner
+parts
+outer rings
+holes
 ```
 
-Конкретний механізм hook залежить від того, який API фактично експортує `TerritoryMap-1.5.0.jar`.
+У цьому ТЗ:
 
-Якщо прямого API немає, реалізувати адаптер через:
+```text
+guildId = ownerUuid
+guildName = ownerName
+```
 
-* Bukkit services;
-* events;
-* reflection;
-* або винести невеликий API у TerritoryMap.
+TerritoryMap 1.6.0 надає стабільний Bukkit Service та публікує events. API повинен містити:
+
+* read-only snapshot усіх територій;
+* пошук території за `world, x, z`;
+* пошук усіх територій за `ownerUuid`;
+* створення стартової території системного власника;
+* атомарна зміна власника після повного захоплення;
+* збереження `ownerKind = PLAYER|STRATEGIC_STATE`;
+* події створення, зміни, видалення та зміни власника території.
+
+API реєструється через Bukkit Services. BobsterDefence підключається до нього через `softdepend: TerritoryMap`.
+
+Як fallback, якщо API недоступний, `TerritoryMapHook` може читати `plugins/TerritoryMap/territories.yml` тільки для read-only функцій:
+
+* повітряна тривога;
+* пошук територій;
+* визначення власника;
+* вибір цілей.
+
+У fallback-режимі зміна власника TerritoryMap заборонена, а секторальна окупація залишається лише у внутрішньому overlay BobsterDefence. Прямий запис BobsterDefence у чужий `territories.yml` заборонений.
 
 StrategicStates не повинен напряму розкидати виклики TerritoryMap по всьому коду.
 
@@ -944,6 +1017,8 @@ Patrol
 Defence
 ```
 
+Самооборона означає відповідь на безпосередню загрозу всередині власної території або поруч із NPC. Вона не дозволяє переслідувати ворога на його території, захоплювати сектори чи здійснювати ракетні та дронові удари.
+
 ---
 
 # 26. Активна атака в момент вимкнення
@@ -1009,11 +1084,15 @@ ON
 
 # 28. Безпечне значення за замовчуванням
 
-Рекомендовано:
+Значення конфігу:
 
 ```yaml
-attacks-enabled-on-first-start: false
+strategic-states:
+  attacks:
+    enabled-on-first-start: false
 ```
+
+Цей ключ використовується тільки при першому створенні бази. Надалі фактичний `attacksEnabled` читається зі SQLite й не перезаписується значенням конфігу після рестарту або reload.
 
 Тобто адміністратор сам активує війни:
 
@@ -1031,10 +1110,12 @@ attacks-enabled-on-first-start: false
 Protected Guilds
 ```
 
+Запис у списку — UUID гравця-власника території. Команда приймає нік гравця або назву його території, знаходить відповідний `ownerUuid` через TerritoryMap і зберігає саме UUID.
+
 Команда:
 
 ```text
-/bd states guild exclude <guild>
+/bd states guild exclude <player|territory>
 ```
 
 Наприклад:
@@ -1052,6 +1133,8 @@ Protected Guilds
 * захоплювати контрольні точки;
 * обстрілювати її територію.
 
+Звичайна ближня самооборона NPC від гравця із protected guild дозволена лише в безпосередній зоні загрози. Вона не може переходити у війну, переслідування, захоплення або стратегічний удар.
+
 ---
 
 # 30. Повернення гільдії
@@ -1059,6 +1142,8 @@ Protected Guilds
 ```text
 /bd states guild include Kroll_Empire
 ```
+
+Команда так само видаляє зі списку UUID власника, а не текстове ім'я.
 
 ---
 
@@ -1084,8 +1169,10 @@ Protected guilds:
 Перед будь-якою наступальною дією викликається:
 
 ```java
-attackPolicy.canAttack(guildId)
+attackPolicy.canAct(attacker, target, ActionContext.OFFENSIVE, action)
 ```
+
+Якщо target є гільдією гравця, `target.id()` — UUID гравця-власника TerritoryMap.
 
 Перевірка має бути централізованою.
 
@@ -1100,7 +1187,7 @@ AttackPolicyManager
 із методом:
 
 ```text
-canAttackGuild()
+canAct()
 ```
 
 ---
@@ -1159,7 +1246,7 @@ attack-schedule:
 
 # 35. Вибір ворога
 
-`TargetSelectionAI` отримує список усіх TerritoryMap guilds.
+`TargetSelectionAI` групує всі території TerritoryMap з `ownerKind = PLAYER` за `ownerUuid`. Кожна група є однією гільдією гравця. Території з `ownerKind = STRATEGIC_STATE` обробляються окремою логікою state-vs-state.
 
 Відкидає:
 
@@ -1167,7 +1254,7 @@ attack-schedule:
 excluded guilds
 ```
 
-та всі недоступні цілі.
+власника NPC-держави, території без owner UUID та всі інші недоступні цілі.
 
 Для решти рахується:
 
@@ -1455,23 +1542,23 @@ all sectors == StrategicState
 
 # 49. Інтеграція з TerritoryMap
 
-Якщо TerritoryMap підтримує часткові полігони:
-
-при захопленні сектора змінюється polygon ownership.
-
-Якщо TerritoryMap підтримує тільки одну територію = один owner:
-
-BobsterDefence повинен вести власний internal overlay:
+TerritoryMap 1.6.0 має модель `одна територія = один ownerUuid` і не має власності окремих секторів. Тому BobsterDefence завжди веде власний internal overlay:
 
 ```text
 SectorOwnership
 ```
 
-а TerritoryMap отримує повного нового власника тільки після:
+Під час часткової окупації вихідний полігон TerritoryMap не змінюється. Overlay зберігає початкового власника, поточного контролера, прогрес і стан кожного сектора.
+
+Після:
 
 ```text
 100% territory captured
 ```
+
+`TerritoryMapHook` атомарно змінює owner території через Bukkit Service API. Для NPC-держави ownerUuid дорівнює UUID Strategic State, а ownerName — назві держави. API TerritoryMap повинен явно підтримувати системного власника, який не зобов'язаний бути UUID реального Minecraft-гравця.
+
+Якщо BobsterDefence працює у fallback-режимі без write API, повне захоплення фіксується у внутрішньому overlay, записується попередження в лог, а TerritoryMap залишається без змін до появи API або ручної дії адміністратора.
 
 ---
 
@@ -1512,7 +1599,7 @@ DefenceAI
 livingPopulation == 0
 ```
 
-Держава знищена.
+Держава знищена тільки після транзакційно підтвердженої смерті всіх записів Citizen. Unload чанку, невдала матеріалізація, відсутність entity після рестарту або тимчасова помилка пошуку не вважаються смертю.
 
 Після цього:
 
@@ -1539,6 +1626,8 @@ command functions disabled
 
 поки Core не буде відновлено.
 
+BEDROCK не ламається стандартними інструментами, тому пошкодження та відновлення Core реалізуються окремою механікою взаємодії StrategicStates. Звичайний `BlockBreakEvent` не є єдиним способом знищення Core.
+
 ---
 
 # 54. Міждержавні війни
@@ -1546,7 +1635,7 @@ command functions disabled
 Strategic States повинні мати право атакувати:
 
 ```text
-Player Guilds
+Player Territory Owners
 Strategic States
 ```
 
@@ -1563,15 +1652,27 @@ allow-state-vs-state: true
 
 NPC не повинні мати окрему імітовану систему ракет.
 
-Необхідно використовувати існуючі механіки:
+Необхідно використовувати спільні низькорівневі механіки:
 
 ```text
-MissileManager
-DroneManager
-AirDefenceManager
+Missile launch/flight/collision/effects/interception
+Drone model/flight/collision/explosion/interception
+Air defence targeting/interceptors
 ```
 
 через внутрішній API BobsterDefence.
+
+Поточні player-facing методи не є цим API: запуск ракети прив'язаний до `Player` і dispenser, а FPV-дрон — до керування гравцем у spectator mode. Потрібно винести спільне ядро та додати:
+
+```text
+MissileLaunchRequest
+AutonomousDroneMission
+CombatPrincipal
+```
+
+`CombatPrincipal` представляє гравця або Strategic State. Усі ракети, дрони та перехоплювачі мають зберігати тип і UUID власника, щоб єдина система allegiance визначала `friendly/hostile`.
+
+NPC використовує віртуальний арсенал замість інвентаря гравця, але після списання боєприпасу створюється той самий фізичний projectile і застосовуються ті самі ефекти, collision та interception.
 
 ---
 
@@ -1609,7 +1710,7 @@ StateArsenal.ballisticMissiles++
 StateMissileController.launch()
 ```
 
-повинен викликати той самий pipeline, який використовується гравцем.
+повинен створити `MissileLaunchRequest` і викликати той самий низькорівневий pipeline, який використовується гравцем.
 
 Таким чином:
 
@@ -1913,7 +2014,7 @@ target sector owner
 Перед фактичним launch:
 
 ```text
-AttackPolicyManager.canAttack(targetGuild)
+AttackPolicyManager.canAct(attacker, target, context, action)
 ```
 
 перевіряється ще раз.
@@ -1923,6 +2024,46 @@ AttackPolicyManager.canAttack(targetGuild)
 ```text
 launch = CANCELLED
 ```
+
+---
+
+# 75A. Удари гравців по Strategic State
+
+Кожна детонація FPV-дрона або балістичної ракети в межах TerritoryMap-території Strategic State створює `StrategicImpact` із такими даними:
+
+```text
+State UUID
+CombatPrincipal атакувальника
+WeaponType
+ExplosionPower
+World / XYZ
+GroundImpact
+Timestamp
+```
+
+Фізичний шар залишається джерелом фактичного руйнування блоків і смерті завантажених Citizen. Стратегічний шар додатково:
+
+* зменшує stability;
+* знищує частину ресурсних запасів;
+* ураховує пошкодження будівель після появи Building System;
+* накопичує threat до конкретного UUID атакувальника;
+* зберігає удар і threat у SQLite.
+
+Вибух високо над поверхнею записується як загроза, але не списує ресурси й не пошкоджує будівлі. Перехоплений боєприпас біля землі може завдати звичайних наслідків відповідно до фактичної точки та сили вибуху.
+
+Threat поступово зменшується за конфігурованим half-life. Один випадковий удар не повинен автоматично створювати нескінченну війну.
+
+Правила відповіді:
+
+```text
+attacks = OFF                         -> локальна самооборона, без стратегічної відповіді
+attacks = ON, threat нижче порога     -> тривога й оборонна готовність
+attacks = ON, threat вище порога      -> кандидат на майбутню операцію відплати
+protected guild                       -> тільки локальна самооборона
+friendly CombatPrincipal              -> не вважається ворожим ударом
+```
+
+Удар не змінює TerritoryMap owner і не запускає захоплення секторів. Для цього потрібна окрема війна та наземний контроль.
 
 ---
 
@@ -2058,6 +2199,18 @@ VirtualArmy
 
 перетворюється на фізичних Pillager приблизно у поточній simulated location.
 
+Матеріалізація та віртуалізація виконуються як атомарна зміна стану. Для кожного Citizen одночасно допустимий лише один стан:
+
+```text
+VIRTUAL
+MATERIALIZING
+PHYSICAL
+VIRTUALIZING
+DEAD
+```
+
+UUID фізичної entity зберігається окремо від UUID Citizen. Повторний `ChunkLoadEvent`, рестарт або дубльований scheduler tick не повинен створювати другого Pillager для того самого Citizen.
+
 ---
 
 # 85. Заборона телепортації перед очима
@@ -2067,6 +2220,8 @@ VirtualArmy
 virtualization не використовується.
 
 NPC повинні реально пройти маршрут.
+
+Фізичні Pillager мають бути persistent, не брати участі у ванільних patrol/raid механіках і не despawn через відстань. Їхні цілі контролюються StrategicStates; ванільна ворожість не повинна обходити AttackPolicy або allegiance.
 
 ---
 
@@ -2103,17 +2258,19 @@ settings
 
 # 88. Формат
 
-Для першої версії допустимо:
-
-```text
-YAML/JSON
-```
-
-але через обсяг системи рекомендовано:
+Основне сховище StrategicStates:
 
 ```text
 SQLite
 ```
+
+YAML залишається тільки для конфігурації та текстів. SQLite файл:
+
+```text
+plugins/BobsterDefence/states/states.db
+```
+
+Сховище повинно мати `schema_version`, міграції та транзакції. Записи State, Citizen, Building, War і Sector, що належать одній операції, не можна зберігати частково.
 
 ---
 
@@ -2129,7 +2286,10 @@ capture_sectors
 state_arsenal
 state_relations
 state_events
+settings
 ```
+
+У `settings` зберігаються щонайменше `attacksEnabled` і schema version. Protected guilds зберігаються як UUID власників TerritoryMap.
 
 ---
 
@@ -2183,6 +2343,8 @@ Slow Tick:
 
 Paper має scheduler-механізми для відкладених/повторних задач, а також окремий async scheduler у сучасному API.
 
+Доступ до SQLite виконується через один контрольований async executor. Bukkit/Paper API, читання блоків, створення сутностей і зміна світу виконуються тільки на main thread. Для target scoring main thread порціями формує immutable snapshot, після чого математичний scoring може виконуватися async.
+
 ---
 
 # 92. Команди
@@ -2226,10 +2388,12 @@ Paper має scheduler-механізми для відкладених/повт
 ## Guild protection
 
 ```text
-/bd states guild exclude <guild>
-/bd states guild include <guild>
+/bd states guild exclude <player|territory>
+/bd states guild include <player|territory|uuid>
 /bd states guild excluded
 ```
+
+У виводі `excluded` показуються поточний нік, UUID власника та кількість його територій. Якщо нік не знайдено онлайн, команда повинна вміти знайти owner за збереженими територіями TerritoryMap.
 
 ---
 
@@ -2242,7 +2406,7 @@ Paper має scheduler-механізми для відкладених/повт
 
 /bd states population <state> set <amount>
 
-/bd states war <state> <guild>
+/bd states war <state> <player|territory>
 
 /bd states peace <state>
 
@@ -2326,8 +2490,19 @@ strategic-states:
 
   max-states: 5
 
+  creation:
+    allowed-worlds: [world]
+    starting-territory-radius: 64
+    minimum-core-distance: 256
+    names:
+      - Iron Dominion
+      - Azure Republic
+      - Verdant Union
+      - Golden Pact
+      - Violet Crown
+
   attacks:
-    enabled: false
+    enabled-on-first-start: false
 
     on-disable:
       cancel-active-invasions: true
@@ -2347,6 +2522,11 @@ strategic-states:
     starting-max: 6
     max-per-state: 50
 
+  construction:
+    blocks-per-second: 4
+    template-provider: PAPER_STRUCTURE
+    prevent-player-block-overwrite: true
+
   capture:
     sector-size: 64
     capture-radius: 16
@@ -2357,6 +2537,8 @@ strategic-states:
   war:
     minimum-state-level: 3
     minimum-readiness: 0.80
+    allow-state-vs-player: true
+    allow-state-vs-state: true
 
   strategic-targeting:
 
@@ -2372,8 +2554,10 @@ strategic-states:
 
     fallback-to-random-target: true
 
-  protected-guilds: []
+  protected-owner-uuids: []
 ```
+
+`protected-owner-uuids` є початковим списком для першого створення бази. Подальші зміни через команди зберігаються у SQLite й не скидаються під час reload.
 
 ---
 
@@ -2431,23 +2615,24 @@ DEVELOP
 AttackPolicyManager
 ```
 
-Псевдологіка:
+Центральний gate отримує контекст операції:
 
 ```java
-boolean canAttack(Guild guild) {
-
-    if (!strategicStatesEnabled)
+boolean canAct(CombatPrincipal attacker, CombatPrincipal target, ActionContext context, OffensiveAction action) {
+    if (!strategicStatesEnabled) {
         return false;
-
-    if (!attacksEnabled)
+    }
+    if (context == ActionContext.OFFENSIVE && !attacksEnabled) {
         return false;
-
-    if (excludedGuilds.contains(guild.getId()))
+    }
+    if (context == ActionContext.OFFENSIVE && protectedOwnerUuids.contains(target.id())) {
         return false;
-
+    }
     return true;
 }
 ```
+
+`DEFENSIVE` дозволяє лише локальну самооборону. Захоплення секторів, переслідування на чужій території та стратегічні удари завжди мають контекст `OFFENSIVE`.
 
 Але перевірка здійснюється:
 
@@ -2526,6 +2711,24 @@ server offline = world frozen
 
 Розробку необхідно розділити на етапи.
 
+Кожна фаза повинна завершуватися міграцією БД, командами debug для нової функціональності та тестом restart/unload/reload. Наступна фаза не повинна використовувати незбережений runtime-only стан попередньої.
+
+## Phase 0
+
+TerritoryMap Bukkit Service API.
+
+System owner support.
+
+Territory create/read/find/change-owner operations.
+
+Territory events.
+
+CombatPrincipal та allegiance abstraction у BobsterDefence.
+
+SQLite schema, migrations та repository infrastructure.
+
+---
+
 ## Phase 1
 
 State Core.
@@ -2539,6 +2742,8 @@ Population.
 Basic NPC ownership.
 
 Virtual simulation.
+
+Atomic physical/virtual Citizen lifecycle.
 
 ---
 
@@ -2560,7 +2765,7 @@ Population growth.
 
 Construction.
 
-Schematics.
+Structure templates.
 
 Virtual construction.
 
@@ -2694,7 +2899,7 @@ Balancing.
 
 22. Захоплюють першу контрольну точку.
 
-23. Переходить тільки один сектор TerritoryMap.
+23. У внутрішньому `SectorOwnership` переходить тільки один сектор; власник усієї території TerritoryMap ще не змінюється.
 
 24. Фронт просувається.
 
@@ -2721,6 +2926,16 @@ Balancing.
 ```text
 /bd states guild include Solaria
 ```
+
+31. Після рестарту `attacksEnabled`, protected owner UUID, війни, сектори, Citizens і будівлі відновлюються без втрати стану.
+
+32. Повторне завантаження чанку не створює дублікати Citizen, армій або будівель.
+
+33. Часткове захоплення змінює тільки `SectorOwnership` BobsterDefence і не передає всю територію TerritoryMap.
+
+34. Після захоплення всіх секторів TerritoryMap отримує `ownerUuid = state UUID` та `ownerKind = STRATEGIC_STATE` через Service API.
+
+35. Якщо write API TerritoryMap недоступний, створення нової держави блокується з чітким повідомленням, а решта BobsterDefence продовжує працювати.
 
 ---
 

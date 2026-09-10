@@ -28,6 +28,7 @@ import org.joml.Vector3f;
 import ua.bobster.defence.BobsterDefence;
 import ua.bobster.defence.ballistic.BallisticMissile;
 import ua.bobster.defence.drone.DroneSession;
+import ua.bobster.defence.combat.CombatPrincipal;
 import ua.bobster.defence.util.DisplayUtil;
 import ua.bobster.defence.util.MessageUtil;
 
@@ -65,6 +66,7 @@ public class AaManager {
     private final NamespacedKey ownerKey;
     private final NamespacedKey displayKey;
     private final NamespacedKey turretKey;
+    private final NamespacedKey elytraKey;
     private final NamespacedKey interceptorKey;
 
     private final Map<String, AaTier> tiers = new LinkedHashMap<>();
@@ -95,6 +97,7 @@ public class AaManager {
     private double hitDistance;
     private int wastedShotsLimit;
     private long verdictTtlMillis;
+    private double elytraDamage;
 
     public AaManager(BobsterDefence plugin, AaItem item, TeamRegistry teams) {
         this.plugin = plugin;
@@ -104,6 +107,7 @@ public class AaManager {
         this.ownerKey = new NamespacedKey(plugin, "aa_owner");
         this.displayKey = new NamespacedKey(plugin, "aa_display");
         this.turretKey = new NamespacedKey(plugin, "aa_turret");
+        this.elytraKey = new NamespacedKey(plugin, "aa_elytra_defence");
         this.interceptorKey = new NamespacedKey(plugin, "aa_interceptor");
         this.storageFile = new File(plugin.getDataFolder(), "aa-launchers.yml");
         reload();
@@ -125,8 +129,7 @@ public class AaManager {
         // Найдовший політ ракети — близько 45 с, тож із запасом.
         this.verdictTtlMillis = Math.max(30, config.getInt(
                 "air-defence-system.targeting.verdict-ttl-seconds", 180)) * 1000L;
-        // Скидаємо кеш статусів, інакше після /ppo reload плашки не перемалювалися б
-        // і не підхопили б нову дальність видимості.
+        this.elytraDamage = Math.max(0.0D, config.getDouble("air-defence-system.targeting.elytra-player-damage", 20.0D));
         lastStatus.clear();
         scanner.reload();
         loadTiers(config.getConfigurationSection("air-defence-system.launcher"));
@@ -148,6 +151,7 @@ public class AaManager {
                     id.toLowerCase(),
                     tier.getInt("level", level),
                     tier.getString("name", "<gold>🛡 BOBSTER AA " + id.toUpperCase()),
+                    Math.max(4, tier.getInt("zone-size", tier.getInt("range", 32) * 2)),
                     Math.max(4, tier.getInt("range", 32)),
                     Math.max(4, tier.getInt("vertical-range", 48)),
                     Math.max(1, tier.getInt("max-targets", 1)),
@@ -273,8 +277,26 @@ public class AaManager {
         return direct != null ? direct : tiers.get(canonical(id));
     }
 
+    public AaTarget engage(CombatPrincipal owner, Location muzzle, String tierId, String launcherKey) {
+        AaTier tier = tier(tierId);
+        if (!enabled || owner == null || muzzle == null || muzzle.getWorld() == null || tier == null) {
+            return null;
+        }
+        String key = "strategic:" + launcherKey;
+        if (tickCounter - lastShot.getOrDefault(key, -9999L) < tier.fireCooldown()) {
+            return null;
+        }
+        List<AaTarget> targets = scanner.scan(muzzle, tier, owner, target -> worthEngaging(target, tier), tier.maxTargets());
+        if (targets.isEmpty()) {
+            return null;
+        }
+        AaTarget target = targets.getFirst();
+        fire(muzzle, owner, null, tier, target, key);
+        return target;
+    }
+
     public AaLauncher wrap(Block block) {
-        return new AaLauncher(block, item, ownerKey, displayKey, turretKey);
+        return new AaLauncher(block, item, ownerKey, displayKey, turretKey, elytraKey);
     }
 
     public AaLauncher launcherAt(Block block) {
@@ -386,7 +408,8 @@ public class AaManager {
             return;
         }
 
-        List<AaTarget> targets = scanner.scan(launcher.muzzle(), tier, launcher.owner(),
+        CombatPrincipal owner = launcher.owner() == null ? null : CombatPrincipal.player(launcher.owner());
+        List<AaTarget> targets = scanner.scan(launcher.muzzle(), tier, owner, launcher.elytraDefenceEnabled(),
                 target -> worthEngaging(target, tier),
                 tier.maxTargets());
         if (targets.isEmpty()) {
@@ -417,9 +440,13 @@ public class AaManager {
         if (!launcher.consumeAmmo(tier)) {
             return;
         }
-        lastShot.put(key, tickCounter);
+        CombatPrincipal owner = launcher.owner() == null ? null : CombatPrincipal.player(launcher.owner());
+        fire(launcher.muzzle(), owner, launcher.owner(), tier, target, key);
+        aimTurret(launcher, target.aimPoint());
+    }
 
-        Location muzzle = launcher.muzzle();
+    private void fire(Location muzzle, CombatPrincipal owner, UUID creditedOwner, AaTier tier, AaTarget target, String key) {
+        lastShot.put(key, tickCounter);
         World world = muzzle.getWorld();
         Vector initial = target.aimPoint().toVector().subtract(muzzle.toVector()).normalize()
                 .multiply(tier.speed());
@@ -432,19 +459,16 @@ public class AaManager {
             spawned.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
             spawned.setPersistent(false);
             spawned.getPersistentDataContainer().set(interceptorKey, PersistentDataType.BYTE, (byte) 1);
-            UUID owner = launcher.owner();
             if (owner != null) {
-                spawned.getPersistentDataContainer().set(
-                        plugin.ownerKey(), PersistentDataType.STRING, owner.toString());
+                plugin.combatIdentity().write(spawned.getPersistentDataContainer(), owner);
             }
         });
 
-        shots.add(new ActiveShot(new Interceptor(arrow, target, launcher.owner(), tier.speed(),
+        shots.add(new ActiveShot(new Interceptor(arrow, target, creditedOwner, tier.speed(),
                 hitDistance, interceptorLifetime, flameTrail, smokeTrail), key, tier.id()));
 
         world.playSound(muzzle, Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 1.6f, 1.4f);
         world.spawnParticle(Particle.FLAME, muzzle, 15, 0.2D, 0.2D, 0.2D, 0.05D);
-        aimTurret(launcher, target.aimPoint());
     }
 
     /**
@@ -480,6 +504,8 @@ public class AaManager {
             case VANILLA_TNT -> interceptTnt(target.entity());
             case FPV_DRONE -> interceptDrone(target.entity(), interceptor.launcherOwner());
             case BALLISTIC_MISSILE -> interceptMissile(target.entity());
+            case GUIDED_MISSILE -> plugin.strike() != null && plugin.strike().intercept(target.entity());
+            case ELYTRA_PLAYER -> interceptElytraPlayer(target.entity(), interceptor.launcherOwner());
         };
         if (destroyed) {
             creditOwner(interceptor.launcherOwner());
@@ -529,13 +555,8 @@ public class AaManager {
         if (plugin.drones() == null) {
             return false;
         }
-        DroneSession session = plugin.drones().sessionByDrone(entity);
-        if (session == null || session.isEnding()) {
-            return false;
-        }
         Player credited = launcherOwner == null ? null : plugin.getServer().getPlayer(launcherOwner);
-        plugin.drones().end(session, DroneSession.EndReason.INTERCEPTED, credited);
-        return true;
+        return plugin.drones().intercept(entity, credited);
     }
 
     private boolean interceptMissile(Entity entity) {
@@ -543,7 +564,7 @@ public class AaManager {
             return false;
         }
         BallisticMissile missile = plugin.ballistic().projectileOf(entity);
-        if (missile == null || missile.isEnding()) {
+        if (missile == null || missile.isEnding() || !missile.interceptable()) {
             return false;
         }
         if (!missile.registerHit()) {
@@ -551,6 +572,23 @@ public class AaManager {
             return false; // ракета витримала влучання — потрібні ще
         }
         plugin.ballistic().detonate(missile, missile.currentLocation(), true);
+        return true;
+    }
+
+    private boolean interceptElytraPlayer(Entity entity, UUID launcherOwner) {
+        if (!(entity instanceof Player player) || !player.isGliding()) {
+            return false;
+        }
+        player.setGliding(false);
+        player.setVelocity(player.getVelocity().setY(Math.min(-0.6D, player.getVelocity().getY())));
+        Player source = launcherOwner == null ? null : plugin.getServer().getPlayer(launcherOwner);
+        if (elytraDamage > 0.0D) {
+            if (source == null) {
+                player.damage(elytraDamage);
+            } else {
+                player.damage(elytraDamage, source);
+            }
+        }
         return true;
     }
 

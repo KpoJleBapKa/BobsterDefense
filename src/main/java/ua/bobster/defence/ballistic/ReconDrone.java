@@ -179,6 +179,10 @@ public class ReconDrone {
             manager.sendMessage(player, "recon-busy-drone", Map.of());
             return;
         }
+        if (manager.camera().isActive(player)) {
+            manager.sendMessage(player, "rocket-camera-busy", Map.of());
+            return;
+        }
         long cooldownLeft = launcher.reconCooldown() - System.currentTimeMillis();
         if (cooldownLeft > 0) {
             manager.sendMessage(player, "recon-cooldown",

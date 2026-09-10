@@ -22,6 +22,7 @@ import java.util.Map;
  */
 public class BallisticGui implements InventoryHolder {
 
+    public static final int SLOT_REDSTONE = 0;
     public static final int SLOT_STATUS = 2;
     public static final int SLOT_TARGET = 4;
     public static final int SLOT_AMMO = 6;
@@ -36,8 +37,12 @@ public class BallisticGui implements InventoryHolder {
         this.plugin = plugin;
         this.manager = manager;
         this.launcherBlock = launcherBlock;
-        this.inventory = Bukkit.createInventory(this, 9,
-                MessageUtil.parse(plugin.message("ballistic-gui-title")));
+        String number = registryNumber();
+        String title = plugin.message("ballistic-gui-title");
+        if (!title.contains("{number}")) {
+            title += " <gray>[" + number + "]";
+        }
+        this.inventory = Bukkit.createInventory(this, 9, MessageUtil.parse(title, Map.of("number", number)));
     }
 
     public Block launcherBlock() {
@@ -61,18 +66,22 @@ public class BallisticGui implements InventoryHolder {
         long cooldownLeft = Math.max(0L,
                 tier.cooldownSeconds() * 1000L - (System.currentTimeMillis() - launcher.lastLaunch())) / 1000L;
 
-        Map<String, Object> placeholders = Map.of(
-                "name", MessageUtil.raw(tier.displayName()),
-                "range", tier.range(),
-                "power", tier.explosionPower(),
-                "ammo", launcher.ammoCount(tier),
-                "need", tier.ammo(),
-                "hits", tier.hitsToIntercept(),
-                "x", launcher.hasTarget() ? launcher.targetX() : "—",
-                "z", launcher.hasTarget() ? launcher.targetZ() : "—",
-                "distance", (int) Math.round(distance),
-                "cooldown", cooldownLeft);
+        Map<String, Object> placeholders = Map.ofEntries(
+                Map.entry("number", registryNumber()),
+                Map.entry("name", MessageUtil.raw(tier.displayName())),
+                Map.entry("range", tier.range()),
+                Map.entry("power", tier.explosionPower()),
+                Map.entry("ammo", launcher.ammoCount(tier)),
+                Map.entry("need", tier.ammo()),
+                Map.entry("hits", tier.hitsToIntercept()),
+                Map.entry("x", launcher.hasTarget() ? launcher.targetX() : "—"),
+                Map.entry("z", launcher.hasTarget() ? launcher.targetZ() : "—"),
+                Map.entry("distance", (int) Math.round(distance)),
+                Map.entry("cooldown", cooldownLeft));
 
+        inventory.setItem(SLOT_REDSTONE, button(launcher.redstoneEnabled() ? Material.LIME_DYE : Material.RED_DYE,
+                launcher.redstoneEnabled() ? "ballistic-gui-redstone-on-name" : "ballistic-gui-redstone-off-name",
+                "ballistic-gui-redstone-lore", placeholders));
         inventory.setItem(SLOT_STATUS, button(Material.PAPER,
                 "ballistic-gui-status-name", "ballistic-gui-status-lore", placeholders));
         inventory.setItem(SLOT_TARGET, button(Material.FILLED_MAP,
@@ -94,7 +103,11 @@ public class BallisticGui implements InventoryHolder {
                 .decoration(TextDecoration.ITALIC, false));
 
         List<net.kyori.adventure.text.Component> lore = new ArrayList<>();
-        for (String line : plugin.getConfig().getStringList("messages." + loreKey)) {
+        List<String> configuredLore = plugin.getConfig().getStringList("messages." + loreKey);
+        if (nameKey.equals("ballistic-gui-status-name") && configuredLore.stream().noneMatch(line -> line.contains("{number}"))) {
+            lore.add(MessageUtil.parse("<gray>Номер установки: <white>{number}", placeholders).decoration(TextDecoration.ITALIC, false));
+        }
+        for (String line : configuredLore) {
             lore.add(MessageUtil.parse(line, placeholders).decoration(TextDecoration.ITALIC, false));
         }
         if (!lore.isEmpty()) {
@@ -107,5 +120,10 @@ public class BallisticGui implements InventoryHolder {
     public void open(Player player) {
         refresh();
         player.openInventory(inventory);
+    }
+
+    private String registryNumber() {
+        BallisticLauncherRegistry.Entry entry = manager.registry().at(launcherBlock);
+        return entry == null ? "поза реєстром" : "#" + entry.number();
     }
 }

@@ -13,6 +13,7 @@ import org.bukkit.event.block.BlockDispenseEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -51,10 +52,11 @@ public class AaListener implements Listener {
         AaLauncher launcher = manager.wrap(event.getBlock());
         launcher.tierId(tierId);
         launcher.owner(event.getPlayer().getUniqueId());
+        launcher.elytraDefenceEnabled(false);
         manager.register(event.getBlock());
         manager.refreshVisuals(launcher);
         manager.sendMessage(event.getPlayer(), "aa-placed", Map.of(
-                "name", MessageUtil.raw(tier.displayName()), "zone", tier.range() * 2));
+                "name", MessageUtil.raw(tier.displayName()), "zone", tier.zoneSize()));
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -133,13 +135,16 @@ public class AaListener implements Listener {
         if (launcher == null) {
             return;
         }
-        // Присів — звичайний інвентар, щоб зарядити перехоплювачі.
+        Player player = event.getPlayer();
+        if (!OwnerProtection.mayUse(plugin, player, launcher.owner(), "aa-not-owner")) {
+            event.setCancelled(true);
+            return;
+        }
         if (event.getPlayer().isSneaking()) {
             return;
         }
         event.setCancelled(true);
 
-        Player player = event.getPlayer();
         AaTier tier = manager.tier(launcher.tierId());
         if (tier == null) {
             return;
@@ -149,12 +154,50 @@ public class AaListener implements Listener {
                 : String.valueOf(plugin.getServer().getOfflinePlayer(launcher.owner()).getName());
         manager.sendMessage(player, "aa-info", Map.of(
                 "name", MessageUtil.raw(tier.displayName()),
-                "zone", tier.range() * 2,
+                "zone", tier.zoneSize(),
                 "range", tier.range(),
                 "vertical", tier.verticalRange(),
                 "targets", tier.maxTargets(),
                 "cooldown", String.format("%.1f", tier.fireCooldown() / 20.0D),
                 "ammo", launcher.ammoCount(tier),
                 "owner", ownerName));
+        new AaGui(plugin, manager, event.getClickedBlock()).open(player);
+    }
+
+    @EventHandler
+    public void onGuiClick(InventoryClickEvent event) {
+        if (!(event.getView().getTopInventory().getHolder() instanceof AaGui gui)) {
+            return;
+        }
+        event.setCancelled(true);
+        if (!(event.getWhoClicked() instanceof Player player)) {
+            return;
+        }
+        int slot = event.getRawSlot();
+        if (slot < 0 || slot >= gui.getInventory().getSize()) {
+            return;
+        }
+        AaLauncher launcher = manager.launcherAt(gui.block());
+        if (launcher == null) {
+            player.closeInventory();
+            return;
+        }
+        if (!OwnerProtection.mayUse(plugin, player, launcher.owner(), "aa-not-owner")) {
+            player.closeInventory();
+            return;
+        }
+        switch (slot) {
+            case AaGui.SLOT_AMMO -> plugin.getServer().getScheduler().runTask(plugin, () -> {
+                if (gui.block().getState(false) instanceof Dispenser dispenser) {
+                    player.openInventory(dispenser.getInventory());
+                }
+            });
+            case AaGui.SLOT_ELYTRA -> {
+                launcher.elytraDefenceEnabled(!launcher.elytraDefenceEnabled());
+                manager.sendMessage(player, launcher.elytraDefenceEnabled() ? "aa-elytra-on" : "aa-elytra-off", Map.of());
+                gui.refresh();
+            }
+            default -> gui.refresh();
+        }
     }
 }

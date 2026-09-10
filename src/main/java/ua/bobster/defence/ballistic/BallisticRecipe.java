@@ -6,7 +6,9 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.ShapelessRecipe;
 import ua.bobster.defence.BobsterDefence;
+import ua.bobster.defence.missile.MissilePayload;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,18 +46,21 @@ public class BallisticRecipe {
             return;
         }
         for (LauncherTier tier : manager.tiers()) {
-            ConfigurationSection recipeSection = launchers.getConfigurationSection(tier.id() + ".recipe");
-            if (recipeSection == null) {
-                continue;
+            ConfigurationSection rocketRecipe = launchers.getConfigurationSection(tier.id() + ".rocket.recipe");
+            if (rocketRecipe != null) {
+                registerOne(tier, rocketRecipe, true);
             }
-            registerOne(tier, recipeSection);
+            ConfigurationSection recipeSection = launchers.getConfigurationSection(tier.id() + ".recipe");
+            if (recipeSection != null) {
+                registerOne(tier, recipeSection, false);
+            }
         }
         if (!registered.isEmpty()) {
             plugin.getLogger().info("Ballistic: зареєстровано крафтів — " + registered.size());
         }
     }
 
-    private void registerOne(LauncherTier tier, ConfigurationSection section) {
+    private void registerOne(LauncherTier tier, ConfigurationSection section, boolean rocket) {
         List<String> shape = section.getStringList("shape");
         ConfigurationSection ingredients = section.getConfigurationSection("ingredients");
         if (shape.isEmpty() || shape.size() > 3 || ingredients == null) {
@@ -63,8 +68,10 @@ public class BallisticRecipe {
             return;
         }
 
-        NamespacedKey key = new NamespacedKey(plugin, "ballistic_" + tier.id());
-        ShapedRecipe recipe = new ShapedRecipe(key, item.create(tier, 1));
+        String keyName = rocket ? "ballistic_rocket_" + tier.id() : "ballistic_" + tier.id();
+        int amount = Math.max(1, Math.min(64, section.getInt("amount", 1)));
+        NamespacedKey key = new NamespacedKey(plugin, keyName);
+        ShapedRecipe recipe = new ShapedRecipe(key, rocket ? item.createRocket(tier, amount) : item.create(tier, amount));
         try {
             recipe.shape(shape.toArray(new String[0]));
         } catch (IllegalArgumentException ex) {
@@ -94,9 +101,16 @@ public class BallisticRecipe {
 
         Bukkit.addRecipe(recipe);
         registered.add(key);
+        if (rocket) {
+            registerEmptyAndLoading(tier, shape, ingredients, amount);
+        }
     }
 
     private RecipeChoice resolveChoice(String raw, LauncherTier tier) {
+        return resolveChoice(raw, tier, MissilePayload.explosive());
+    }
+
+    private RecipeChoice resolveChoice(String raw, LauncherTier tier, MissilePayload payload) {
         String upper = raw.toUpperCase(Locale.ROOT);
         if (upper.startsWith(LAUNCHER_PREFIX)) {
             LauncherTier other = requireTier(raw.substring(LAUNCHER_PREFIX.length()), tier);
@@ -105,10 +119,88 @@ public class BallisticRecipe {
         // Важчі ракети збираються з легших, тому ракета теж буває інгредієнтом.
         if (upper.startsWith(ROCKET_PREFIX)) {
             LauncherTier other = requireTier(raw.substring(ROCKET_PREFIX.length()), tier);
-            return other == null ? null : new RecipeChoice.ExactChoice(item.createRocket(other, 1));
+            if (other == null) {
+                return null;
+            }
+            return payload.kind() == MissilePayload.Kind.EXPLOSIVE ? new RecipeChoice.ExactChoice(item.createRocket(other, 1, payload), item.createLegacyRocket(other, 1)) : new RecipeChoice.ExactChoice(item.createRocket(other, 1, payload));
         }
         Material material = Material.matchMaterial(raw);
         return material == null || !material.isItem() ? null : new RecipeChoice.MaterialChoice(material);
+    }
+
+    private void registerEmptyAndLoading(LauncherTier tier, List<String> sourceShape, ConfigurationSection ingredients, int amount) {
+        List<String> shape = emptyShape(sourceShape, ingredients);
+        if (shape.isEmpty()) {
+            plugin.getLogger().warning("Порожній крафт ракети " + tier.id() + " не має корпусу");
+            return;
+        }
+        MissilePayload empty = MissilePayload.empty();
+        NamespacedKey emptyKey = new NamespacedKey(plugin, "ballistic_rocket_" + tier.id() + "_empty");
+        ShapedRecipe emptyRecipe = new ShapedRecipe(emptyKey, item.createRocket(tier, amount, empty));
+        emptyRecipe.shape(shape.toArray(new String[0]));
+        for (String symbol : ingredients.getKeys(false)) {
+            char key = symbol.charAt(0);
+            String raw = ingredients.getString(symbol, "");
+            if (!uses(shape, key) || Material.matchMaterial(raw) == Material.TNT) {
+                continue;
+            }
+            RecipeChoice choice = resolveChoice(raw, tier, empty);
+            if (choice != null) {
+                emptyRecipe.setIngredient(key, choice);
+            }
+        }
+        Bukkit.addRecipe(emptyRecipe);
+        registered.add(emptyKey);
+
+        ItemStackPair pair = loadingResults(tier);
+        NamespacedKey tntKey = new NamespacedKey(plugin, "ballistic_rocket_" + tier.id() + "_load_tnt");
+        ShapelessRecipe tnt = new ShapelessRecipe(tntKey, pair.explosive());
+        tnt.addIngredient(new RecipeChoice.ExactChoice(pair.empty()));
+        tnt.addIngredient(Material.TNT);
+        Bukkit.addRecipe(tnt);
+        registered.add(tntKey);
+
+        NamespacedKey potionKey = new NamespacedKey(plugin, "ballistic_rocket_" + tier.id() + "_load_potion");
+        ShapelessRecipe potion = new ShapelessRecipe(potionKey, pair.potion());
+        potion.addIngredient(new RecipeChoice.ExactChoice(pair.empty()));
+        potion.addIngredient(Material.SPLASH_POTION);
+        Bukkit.addRecipe(potion);
+        registered.add(potionKey);
+    }
+
+    private ItemStackPair loadingResults(LauncherTier tier) {
+        org.bukkit.inventory.ItemStack empty = item.createRocket(tier, 1, MissilePayload.empty());
+        org.bukkit.inventory.ItemStack explosive = item.createRocket(tier, 1, MissilePayload.explosive());
+        org.bukkit.inventory.ItemStack potion = item.createRocket(tier, 1, MissilePayload.potion(new org.bukkit.inventory.ItemStack(Material.SPLASH_POTION)));
+        return new ItemStackPair(empty, explosive, potion);
+    }
+
+    private List<String> emptyShape(List<String> source, ConfigurationSection ingredients) {
+        List<String> result = new ArrayList<>();
+        for (String row : source) {
+            StringBuilder changed = new StringBuilder(row);
+            for (int index = 0; index < changed.length(); index++) {
+                String raw = ingredients.getString(String.valueOf(changed.charAt(index)), "");
+                if (Material.matchMaterial(raw) == Material.TNT) {
+                    changed.setCharAt(index, ' ');
+                }
+            }
+            result.add(changed.toString());
+        }
+        while (!result.isEmpty() && result.getFirst().isBlank()) {
+            result.removeFirst();
+        }
+        while (!result.isEmpty() && result.getLast().isBlank()) {
+            result.removeLast();
+        }
+        return result;
+    }
+
+    private boolean uses(List<String> shape, char symbol) {
+        return shape.stream().anyMatch(row -> row.indexOf(symbol) >= 0);
+    }
+
+    private record ItemStackPair(org.bukkit.inventory.ItemStack empty, org.bukkit.inventory.ItemStack explosive, org.bukkit.inventory.ItemStack potion) {
     }
 
     private LauncherTier requireTier(String id, LauncherTier owner) {

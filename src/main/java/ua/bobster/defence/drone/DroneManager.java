@@ -13,12 +13,15 @@ import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
 import org.joml.AxisAngle4f;
 import org.joml.Vector3f;
 import ua.bobster.defence.BobsterDefence;
+import ua.bobster.defence.combat.CombatPrincipal;
+import ua.bobster.defence.strategicstates.combat.StrategicWeaponType;
 import ua.bobster.defence.util.MessageUtil;
 
 import java.util.ArrayList;
@@ -39,7 +42,9 @@ public class DroneManager {
     private final BobsterDefence plugin;
     private final DroneItem droneItem;
     private final NamespacedKey entityKey;
+    private final NamespacedKey stateKey;
     private final Map<UUID, DroneSession> sessions = new HashMap<>();
+    private final Map<UUID, AutonomousDrone> autonomous = new HashMap<>();
     private final Map<String, DroneType> types = new LinkedHashMap<>();
 
     private DronePhysics physics;
@@ -55,6 +60,7 @@ public class DroneManager {
         this.plugin = plugin;
         this.droneItem = droneItem;
         this.entityKey = new NamespacedKey(plugin, "fpv_drone_entity");
+        this.stateKey = new NamespacedKey(plugin, "state_id");
         reload();
     }
 
@@ -102,7 +108,10 @@ public class DroneManager {
 
     public void start() {
         physics = new DronePhysics(plugin, this);
-        tickTask = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> physics.tickAll(), 1L, 1L);
+        tickTask = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            physics.tickAll();
+            tickAutonomous();
+        }, 1L, 1L);
     }
 
     public void shutdown() {
@@ -112,6 +121,12 @@ public class DroneManager {
         }
         for (DroneSession session : new ArrayList<>(sessions.values())) {
             end(session, DroneSession.EndReason.SHUTDOWN);
+        }
+        for (AutonomousDrone drone : new ArrayList<>(autonomous.values())) {
+            if (drone.beginEnding()) {
+                autonomous.remove(drone.hitbox().getUniqueId());
+                drone.cleanup();
+            }
         }
     }
 
@@ -125,6 +140,10 @@ public class DroneManager {
 
     public DroneItem item() {
         return droneItem;
+    }
+
+    public BobsterDefence plugin() {
+        return plugin;
     }
 
     public List<DroneType> types() {
@@ -187,7 +206,7 @@ public class DroneManager {
         Location origin = player.getLocation().clone();
         Location start = player.getEyeLocation().clone().add(origin.getDirection().normalize().multiply(1.2D));
 
-        ArmorStand hitbox = spawnHitbox(world, start, player.getUniqueId());
+        ArmorStand hitbox = spawnHitbox(world, start, CombatPrincipal.player(player.getUniqueId()));
         BlockDisplay display = spawnDisplay(world, start, type);
         ArmorStand body = operatorCanTakeDamage ? spawnBody(world, origin, player) : null;
 
@@ -206,7 +225,79 @@ public class DroneManager {
         return true;
     }
 
-    private ArmorStand spawnHitbox(World world, Location location, UUID owner) {
+    public boolean launch(AutonomousDroneMission mission) {
+        if (!enabled || mission == null || mission.owner() == null || mission.origin() == null || mission.target() == null) {
+            return false;
+        }
+        World world = mission.origin().getWorld();
+        DroneType type = type(mission.typeId());
+        if (world == null || mission.target().getWorld() == null || !world.equals(mission.target().getWorld()) || type == null) {
+            return false;
+        }
+        if (mission.origin().distanceSquared(mission.target()) > (double) type.maxDistance() * type.maxDistance()) {
+            return false;
+        }
+        AutonomousDrone drone = new AutonomousDrone(this, mission, type);
+        autonomous.put(drone.hitbox().getUniqueId(), drone);
+        playLaunchEffects(world, mission.origin());
+        return true;
+    }
+
+    private void tickAutonomous() {
+        for (AutonomousDrone drone : new ArrayList<>(autonomous.values())) {
+            drone.tick();
+        }
+    }
+
+    public boolean isDrone(Entity entity) {
+        return sessionByDrone(entity) != null || entity != null && autonomous.containsKey(entity.getUniqueId());
+    }
+
+    public boolean intercept(Entity entity, Player interceptor) {
+        DroneSession session = sessionByDrone(entity);
+        if (session != null && !session.isEnding()) {
+            end(session, DroneSession.EndReason.INTERCEPTED, interceptor);
+            return true;
+        }
+        AutonomousDrone drone = entity == null ? null : autonomous.get(entity.getUniqueId());
+        if (drone == null || drone.ending()) {
+            return false;
+        }
+        end(drone, true);
+        return true;
+    }
+
+    boolean canAutonomousHit(CombatPrincipal owner, Entity hitbox, Entity display, Entity entity) {
+        if (!(entity instanceof LivingEntity) || !entity.isValid() || entity.getUniqueId().equals(hitbox.getUniqueId()) || entity.getUniqueId().equals(display.getUniqueId())) {
+            return false;
+        }
+        if (entity instanceof Player player && player.getGameMode() == GameMode.SPECTATOR) {
+            return false;
+        }
+        CombatPrincipal target = principalOf(entity);
+        return target == null || !plugin.allegiance().friendly(owner, target);
+    }
+
+    private CombatPrincipal principalOf(Entity entity) {
+        CombatPrincipal tagged = plugin.combatIdentity().read(entity.getPersistentDataContainer());
+        if (tagged != null) {
+            return tagged;
+        }
+        if (entity instanceof Player player) {
+            return CombatPrincipal.player(player.getUniqueId());
+        }
+        String rawState = entity.getPersistentDataContainer().get(stateKey, PersistentDataType.STRING);
+        if (rawState == null) {
+            return null;
+        }
+        try {
+            return CombatPrincipal.state(UUID.fromString(rawState));
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    ArmorStand spawnHitbox(World world, Location location, CombatPrincipal owner) {
         return world.spawn(location.clone().subtract(0, 0.5D, 0), ArmorStand.class, stand -> {
             stand.setInvisible(true);
             stand.setSmall(true);
@@ -218,12 +309,11 @@ public class DroneManager {
             stand.setSilent(true);
             stand.getPersistentDataContainer().set(entityKey, PersistentDataType.BYTE, (byte) 1);
             // Мітка власника — щоб власна автоматична ППО не збивала свій же дрон.
-            stand.getPersistentDataContainer().set(
-                    plugin.ownerKey(), PersistentDataType.STRING, owner.toString());
+            plugin.combatIdentity().write(stand.getPersistentDataContainer(), owner);
         });
     }
 
-    private BlockDisplay spawnDisplay(World world, Location location, DroneType type) {
+    BlockDisplay spawnDisplay(World world, Location location, DroneType type) {
         return world.spawn(location, BlockDisplay.class, display -> {
             Material block = type.material().isBlock() ? type.material() : Material.TNT;
             display.setBlock(block.createBlockData());
@@ -280,7 +370,7 @@ public class DroneManager {
                 : session.lastLocation().clone();
 
         if (reason != DroneSession.EndReason.SHUTDOWN) {
-            detonate(location, session.hitbox(), session.type(), shotDown(reason));
+            detonate(location, session.hitbox(), session.type(), shotDown(reason), CombatPrincipal.player(session.operator()));
         }
 
         session.display().remove();
@@ -290,6 +380,30 @@ public class DroneManager {
         }
 
         restoreOperator(session, reason, interceptor);
+    }
+
+    void end(AutonomousDrone drone, boolean shotDown) {
+        if (!drone.beginEnding()) {
+            return;
+        }
+        autonomous.remove(drone.hitbox().getUniqueId());
+        Location location = drone.hitbox().getLocation().clone().add(0, 0.5D, 0);
+        detonate(location, drone.hitbox(), drone.type(), shotDown, drone.owner());
+        drone.cleanup();
+    }
+
+    void abort(AutonomousDrone drone) {
+        if (!drone.beginEnding()) {
+            return;
+        }
+        autonomous.remove(drone.hitbox().getUniqueId());
+        drone.cleanup();
+    }
+
+    public void cancelAutonomous() {
+        for (AutonomousDrone drone : new ArrayList<>(autonomous.values())) {
+            abort(drone);
+        }
     }
 
     /** Дрон збили в повітрі, а не він сам детонував по цілі. */
@@ -302,17 +416,22 @@ public class DroneManager {
      * @param shotDown true — дрон збили в повітрі. Тоді вибух не залежить від моделі:
      *                 боєкомплект нікуди не подівся і спрацьовує повністю.
      */
-    private void detonate(Location location, Entity source, DroneType type, boolean shotDown) {
+    private void detonate(Location location, Entity source, DroneType type, boolean shotDown, CombatPrincipal operator) {
         World world = location.getWorld();
         if (world == null) {
             return;
         }
-        double power = shotDown ? interceptExplosionPower : type.explosionPower();
+        double power = shotDown ? interceptExplosionPower : type == null ? 0.0D : type.explosionPower();
+        if (power > 0.0D && plugin.strategicStates() != null) {
+            plugin.strategicStates().recordImpact(location, operator, StrategicWeaponType.DRONE, power);
+        }
         // Джерело вказуємо навмисно: тоді летить EntityExplodeEvent і ChestProtectionListener
         // встигає витягти скрині зі списку зруйнованих блоків.
         world.createExplosion(source, location, (float) power,
                 explosionFire, explosionBreakBlocks);
-        damageNearbyPlayers(location, type);
+        if (type != null) {
+            damageNearbyPlayers(location, type);
+        }
     }
 
     /**

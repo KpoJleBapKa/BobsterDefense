@@ -12,6 +12,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -19,6 +20,7 @@ import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.player.PlayerAnimationEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -42,6 +44,13 @@ public class BallisticListener implements Listener {
         this.plugin = plugin;
         this.manager = manager;
         this.item = item;
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            for (org.bukkit.World world : plugin.getServer().getWorlds()) {
+                for (org.bukkit.Chunk chunk : world.getLoadedChunks()) {
+                    migrateChunk(chunk);
+                }
+            }
+        });
     }
 
     // ─────────────────────── установка та демонтаж ───────────────────────
@@ -59,6 +68,8 @@ public class BallisticListener implements Listener {
         BallisticLauncher launcher = manager.wrap(event.getBlock());
         launcher.tierId(tierId);
         launcher.owner(event.getPlayer().getUniqueId());
+        launcher.redstoneEnabled(false);
+        manager.registerLauncher(event.getBlock(), event.getPlayer().getUniqueId());
         manager.refreshDisplay(launcher);
         manager.sendMessage(event.getPlayer(), "ballistic-placed", Map.of("name", MessageUtil.raw(tier.displayName())));
     }
@@ -75,6 +86,7 @@ public class BallisticListener implements Listener {
         }
         LauncherTier tier = manager.tier(launcher.tierId());
         manager.removeDisplay(launcher);
+        manager.unregisterLauncher(event.getBlock());
         if (tier == null || event.getPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE) {
             return;
         }
@@ -103,6 +115,40 @@ public class BallisticListener implements Listener {
             }
             // Вибух знищує установку остаточно — предметом вона не повертається.
             manager.removeDisplay(launcher);
+            manager.unregisterLauncher(block);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onChunkLoad(ChunkLoadEvent event) {
+        migrateChunk(event.getChunk());
+    }
+
+    private void migrateChunk(org.bukkit.Chunk chunk) {
+        for (org.bukkit.block.BlockState state : chunk.getTileEntities()) {
+            BallisticLauncher launcher = manager.launcherAt(state.getBlock());
+            if (launcher == null || launcher.owner() == null) {
+                continue;
+            }
+            if (plugin.strategicStates() != null && plugin.strategicStates().byId(launcher.owner()) != null) {
+                continue;
+            }
+            manager.registerMigratedLauncher(state.getBlock(), launcher.owner());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onRedstone(BlockRedstoneEvent event) {
+        if (event.getOldCurrent() > 0 || event.getNewCurrent() <= 0) {
+            return;
+        }
+        BallisticLauncher launcher = manager.launcherAt(event.getBlock());
+        if (launcher == null || !launcher.redstoneEnabled()) {
+            return;
+        }
+        LauncherTier tier = manager.tier(launcher.tierId());
+        if (tier != null && manager.validate(launcher, tier) == null) {
+            manager.launchRedstone(launcher, tier);
         }
     }
 
@@ -123,8 +169,17 @@ public class BallisticListener implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onDispense(org.bukkit.event.block.BlockDispenseEvent event) {
-        if (manager.launcherAt(event.getBlock()) != null) {
-            event.setCancelled(true);
+        BallisticLauncher launcher = manager.launcherAt(event.getBlock());
+        if (launcher == null) {
+            return;
+        }
+        event.setCancelled(true);
+        if (!launcher.redstoneEnabled()) {
+            return;
+        }
+        LauncherTier tier = manager.tier(launcher.tierId());
+        if (tier != null && manager.validate(launcher, tier) == null) {
+            manager.launchRedstone(launcher, tier);
         }
     }
 
@@ -156,6 +211,11 @@ public class BallisticListener implements Listener {
             return;
         }
         Player player = event.getPlayer();
+
+        if (!OwnerProtection.mayUse(plugin, player, launcher.owner(), "ballistic-not-owner")) {
+            event.setCancelled(true);
+            return;
+        }
 
         // Присів — відкриваємо звичайний інвентар диспенсера, щоб зарядити TNT.
         if (player.isSneaking()) {
@@ -195,8 +255,17 @@ public class BallisticListener implements Listener {
             manager.sendMessage(player, "ballistic-gone", Map.of());
             return;
         }
+        if (!OwnerProtection.mayUse(plugin, player, launcher.owner(), "ballistic-not-owner")) {
+            player.closeInventory();
+            return;
+        }
 
         switch (slot) {
+            case BallisticGui.SLOT_REDSTONE -> {
+                launcher.redstoneEnabled(!launcher.redstoneEnabled());
+                manager.sendMessage(player, launcher.redstoneEnabled() ? "ballistic-redstone-on" : "ballistic-redstone-off", Map.of());
+                gui.refresh();
+            }
             case BallisticGui.SLOT_AMMO -> later(player, () -> {
                 if (gui.launcherBlock().getState(false) instanceof Dispenser dispenser) {
                     player.openInventory(dispenser.getInventory());
@@ -250,9 +319,8 @@ public class BallisticListener implements Listener {
             return;
         }
         Player player = event.getPlayer();
-        Block selected = manager.selected(player);
-        BallisticLauncher launcher = selected == null ? null : manager.launcherAt(selected);
-        if (launcher == null) {
+        List<BallisticLauncher> launchers = manager.selectedLaunchers(player);
+        if (launchers.isEmpty()) {
             manager.sendMessage(player, "ballistic-not-selected", Map.of());
             return;
         }
@@ -264,7 +332,9 @@ public class BallisticListener implements Listener {
             return;
         }
         MapTargeting.attachRenderer(frame, manager);
-        applyTarget(player, launcher, result.x(), result.z());
+        for (BallisticLauncher launcher : launchers) {
+            applyTarget(player, launcher, result.x(), result.z());
+        }
     }
 
     /**

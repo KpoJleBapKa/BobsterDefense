@@ -13,9 +13,12 @@ import org.bukkit.inventory.ItemStack;
 import ua.bobster.defence.BobsterDefence;
 import ua.bobster.defence.aa.AaTier;
 import ua.bobster.defence.stats.StatsManager;
+import ua.bobster.defence.strategicstates.StrategicStateCommand;
+import ua.bobster.defence.technology.TechnologyManager;
 import ua.bobster.defence.util.MessageUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -25,24 +28,34 @@ public class PpoCommand implements CommandExecutor, TabCompleter {
     private static final String[] MEDALS = {"🥇", "🥈", "🥉"};
 
     private final BobsterDefence plugin;
+    private final StrategicStateCommand stateCommand;
 
     public PpoCommand(BobsterDefence plugin) {
         this.plugin = plugin;
+        this.stateCommand = new StrategicStateCommand(plugin, plugin.strategicStates());
     }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command,
                              @NotNull String label, @NotNull String[] args) {
-        String sub = args.length == 0 ? "stats" : args[0].toLowerCase(Locale.ROOT);
-
-        switch (sub) {
-            case "stats" -> handleStats(sender, args);
-            case "top" -> handleTop(sender);
-            case "list" -> handleAaList(sender);
-            case "give" -> handleAaGive(sender, args);
-            case "ammo", "rocket" -> handleAaAmmo(sender, args);
-            case "reload" -> handleReload(sender);
-            default -> send(sender, plugin.message("usage"));
+        boolean bobster = command.getName().equalsIgnoreCase("bobster");
+        String sub = args.length == 0 ? (bobster ? "stats" : "list") : args[0].toLowerCase(Locale.ROOT);
+        if (bobster) {
+            switch (sub) {
+                case "stats" -> handleStats(sender, args);
+                case "top" -> handleTop(sender);
+                case "tech", "technology" -> handleTechnology(sender, args);
+                case "reload" -> handleReload(sender);
+                case "states" -> stateCommand.execute(sender, Arrays.copyOfRange(args, 1, args.length));
+                default -> send(sender, plugin.message("bobster-usage"));
+            }
+        } else {
+            switch (sub) {
+                case "list", "info" -> handleAaList(sender);
+                case "give" -> handleAaGive(sender, args);
+                case "ammo", "rocket" -> handleAaAmmo(sender, args);
+                default -> send(sender, plugin.message("aa-usage"));
+            }
         }
         return true;
     }
@@ -126,7 +139,7 @@ public class PpoCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(MessageUtil.parse(plugin.message("aa-list-line"), Map.of(
                     "id", tier.id(),
                     "name", MessageUtil.raw(tier.displayName()),
-                    "zone", tier.range() * 2,
+                    "zone", tier.zoneSize(),
                     "targets", tier.maxTargets(),
                     "cooldown", String.format("%.1f", tier.fireCooldown() / 20.0D),
                     "ammo", MessageUtil.raw(tier.ammoName()))));
@@ -208,6 +221,51 @@ public class PpoCommand implements CommandExecutor, TabCompleter {
                 .forEach(rest -> target.getWorld().dropItemNaturally(target.getLocation(), rest));
     }
 
+    private void handleTechnology(CommandSender sender, String[] args) {
+        if (args.length < 2 || args[1].equalsIgnoreCase("list")) {
+            if (!(sender instanceof Player player)) {
+                send(sender, plugin.message("technology-usage"));
+                return;
+            }
+            sendRaw(sender, plugin.message("technology-list-header"), Map.of());
+            if (plugin.technologies().unlocked(player).isEmpty()) {
+                sendRaw(sender, plugin.message("technology-list-empty"), Map.of());
+                return;
+            }
+            for (String technologyId : plugin.technologies().unlocked(player)) {
+                sendRaw(sender, plugin.message("technology-list-line"), Map.of("name", plugin.technologies().displayName(technologyId)));
+            }
+            return;
+        }
+        if (!args[1].equalsIgnoreCase("give") || !sender.hasPermission("bobsterdefence.technology.give")) {
+            send(sender, sender.hasPermission("bobsterdefence.technology.give") ? plugin.message("technology-usage") : plugin.message("no-permission"));
+            return;
+        }
+        if (args.length < 4) {
+            send(sender, plugin.message("technology-usage"));
+            return;
+        }
+        String category = args[2].toLowerCase(Locale.ROOT);
+        String tier = args[3].toLowerCase(Locale.ROOT);
+        if (!plugin.technologies().valid(category, tier)) {
+            send(sender, plugin.message("technology-unknown"), Map.of("category", category, "tier", tier));
+            return;
+        }
+        Player target;
+        if (args.length >= 5) {
+            target = Bukkit.getPlayerExact(args[4]);
+        } else {
+            target = sender instanceof Player player ? player : null;
+        }
+        if (target == null) {
+            send(sender, args.length >= 5 ? plugin.message("unknown-player") : plugin.message("technology-usage"), Map.of("player", args.length >= 5 ? args[4] : ""));
+            return;
+        }
+        String technologyId = plugin.technologies().id(category, tier);
+        giveItem(target, plugin.technologies().createBook(category, tier, 1));
+        send(sender, plugin.message("technology-given"), Map.of("name", plugin.technologies().displayName(technologyId), "player", target.getName()));
+    }
+
     private void handleReload(CommandSender sender) {
         if (!sender.hasPermission("bobsterdefence.reload")) {
             send(sender, plugin.message("no-permission"));
@@ -263,15 +321,23 @@ public class PpoCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
                                       @NotNull String alias, @NotNull String[] args) {
         List<String> result = new ArrayList<>();
+        boolean bobster = command.getName().equalsIgnoreCase("bobster");
         if (args.length == 1) {
-            for (String option : List.of("stats", "top", "list", "give", "ammo", "reload")) {
+            List<String> options = bobster ? List.of("stats", "top", "tech", "states", "reload") : List.of("list", "give", "ammo");
+            for (String option : options) {
                 if (option.startsWith(args[0].toLowerCase(Locale.ROOT))) {
                     result.add(option);
                 }
             }
             return result;
         }
-        if (args.length == 2 && (args[0].equalsIgnoreCase("give") || args[0].equalsIgnoreCase("ammo"))) {
+        if (bobster && args.length >= 2 && args[0].equalsIgnoreCase("states")) {
+            return stateCommand.tab(sender, Arrays.copyOfRange(args, 1, args.length));
+        }
+        if (bobster && (args[0].equalsIgnoreCase("tech") || args[0].equalsIgnoreCase("technology"))) {
+            return technologyTab(args);
+        }
+        if (!bobster && args.length == 2 && (args[0].equalsIgnoreCase("give") || args[0].equalsIgnoreCase("ammo"))) {
             for (AaTier tier : plugin.aa().tiers()) {
                 if (tier.id().startsWith(args[1].toLowerCase(Locale.ROOT))) {
                     result.add(tier.id());
@@ -279,7 +345,7 @@ public class PpoCommand implements CommandExecutor, TabCompleter {
             }
             return result;
         }
-        if (args.length == 2 && args[0].equalsIgnoreCase("stats")
+        if (bobster && args.length == 2 && args[0].equalsIgnoreCase("stats")
                 && sender.hasPermission("bobsterdefence.stats.others")) {
             String prefix = args[args.length - 1].toLowerCase(Locale.ROOT);
             for (Player player : Bukkit.getOnlinePlayers()) {
@@ -289,5 +355,34 @@ public class PpoCommand implements CommandExecutor, TabCompleter {
             }
         }
         return result;
+    }
+
+    private List<String> technologyTab(String[] args) {
+        if (args.length == 2) {
+            return matches(args[1], List.of("list", "give"));
+        }
+        if (args.length == 3 && args[1].equalsIgnoreCase("give")) {
+            return matches(args[2], List.of(TechnologyManager.AA, TechnologyManager.BALLISTIC, TechnologyManager.CRUISE));
+        }
+        if (args.length == 4 && args[1].equalsIgnoreCase("give")) {
+            if (args[2].equalsIgnoreCase(TechnologyManager.AA)) {
+                return matches(args[3], plugin.aa().tiers().stream().map(AaTier::id).toList());
+            }
+            if (args[2].equalsIgnoreCase(TechnologyManager.BALLISTIC)) {
+                return matches(args[3], plugin.ballistic().tiers().stream().map(tier -> tier.id()).toList());
+            }
+            if (args[2].equalsIgnoreCase(TechnologyManager.CRUISE)) {
+                return matches(args[3], plugin.strike().types().stream().map(type -> type.id()).toList());
+            }
+        }
+        if (args.length == 5 && args[1].equalsIgnoreCase("give")) {
+            return matches(args[4], Bukkit.getOnlinePlayers().stream().map(Player::getName).toList());
+        }
+        return List.of();
+    }
+
+    private List<String> matches(String input, List<String> options) {
+        String prefix = input.toLowerCase(Locale.ROOT);
+        return options.stream().filter(option -> option.toLowerCase(Locale.ROOT).startsWith(prefix)).toList();
     }
 }

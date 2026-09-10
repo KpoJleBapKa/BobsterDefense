@@ -11,23 +11,45 @@ softdepend:
 
 commands:
   ppo:
-    description: Bobster ППО - статистика та керування
-    usage: /ppo [stats|top|list|give|ammo|reload]
-    aliases: [airdefence, bd]
+    description: Стаціонарне ППО
+    usage: /ppo <list|give|ammo>
+    aliases: [airdefence]
+  bobster:
+    description: Загальне керування BobsterDefence та Strategic States
+    usage: /bobster <stats|top|tech|states|reload>
+    aliases: [bd]
   drone:
-    description: FPV-дрони - список моделей та видача
-    usage: /drone <list|give <тип> [нік] [кількість]>
+    description: FPV-дрони та універсальна дронова пускова
+    usage: /drone <list|give|launcher>
     aliases: [fpv, дрон]
   ballistic:
     description: Балістична установка - наведення та запуск
-    usage: /ballistic <target|launch|info|give|rocket>
+    usage: /ballistic <list|clear_list|select none|select all|select 1 2|target|launch|info|give|rocket>
     aliases: [arty, bl]
+  rocket:
+    description: Камера балістичної ракети та керовані крилаті ракети
+    usage: /rocket [camera|launch|redstone|give]
   coalition:
     description: Коаліції - хто з ким на одному боці
     usage: /coalition <create|add|kick|leave|disband|info>
     aliases: [coa, side, союз]
 
 permissions:
+  bobsterdefence.states.admin:
+    description: Повне адміністрування Strategic States
+    default: op
+  bobsterdefence.states.create:
+    description: Видача та встановлення Strategic State Core
+    default: op
+  bobsterdefence.states.attacks:
+    description: Глобальне керування наступальними операціями
+    default: op
+  bobsterdefence.states.guildprotection:
+    description: Керування protected-власниками TerritoryMap
+    default: op
+  bobsterdefence.states.debug:
+    description: Перегляд діагностики Strategic States
+    default: op
   bobsterdefence.coalition.use:
     description: Створення коаліцій та керування ними
     default: true
@@ -37,27 +59,45 @@ permissions:
   bobsterdefence.aa.give:
     description: Видача установок ППО та перехоплювачів
     default: op
+  bobsterdefence.admin.use:
+    description: Відкривати та керувати чужими установками й ППО
+    default: op
+  bobsterdefence.technology.give:
+    description: Видача книг військових технологій
+    default: op
   bobsterdefence.ballistic.use:
     description: Керування пусковою установкою
     default: true
   bobsterdefence.ballistic.give:
     description: Видача установок через /ballistic give
     default: op
+  bobsterdefence.ballistic.list.others:
+    description: Перегляд списку установок інших гравців
+    default: op
+  bobsterdefence.rocket.camera:
+    description: Сумісний permission-вузол камери; команда /rocket доступна всім і показує лише власну ракету
+    default: true
+  bobsterdefence.strike.give:
+    description: Видача дронових і ракетних пускових та керованих ракет
+    default: op
+  bobsterdefence.strike.list.others:
+    description: Перегляд списку дронових установок інших гравців
+    default: op
   bobsterdefence.drone.use:
     description: Запуск FPV-дрона
     default: true
   bobsterdefence.drone.give:
-    description: Видача FPV-дрона через /ppo drone
+    description: Видача FPV-дрона через /drone give
     default: op
   bobsterdefence.use:
-    description: Доступ до /ppo та /ppo stats
+    description: Доступ до /bobster та /bobster stats
     default: true
   bobsterdefence.top:
-    description: Доступ до /ppo top
+    description: Доступ до /bobster top
     default: true
   bobsterdefence.stats.others:
     description: Перегляд статистики інших гравців
     default: op
   bobsterdefence.reload:
-    description: Доступ до /ppo reload
+    description: Доступ до /bobster reload
     default: op

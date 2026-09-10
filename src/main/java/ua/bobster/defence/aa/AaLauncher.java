@@ -23,14 +23,16 @@ public class AaLauncher {
     private final NamespacedKey ownerKey;
     private final NamespacedKey displayKey;
     private final NamespacedKey turretKey;
+    private final NamespacedKey elytraKey;
 
     AaLauncher(Block block, AaItem item, NamespacedKey ownerKey,
-               NamespacedKey displayKey, NamespacedKey turretKey) {
+               NamespacedKey displayKey, NamespacedKey turretKey, NamespacedKey elytraKey) {
         this.block = block;
         this.item = item;
         this.ownerKey = ownerKey;
         this.displayKey = displayKey;
         this.turretKey = turretKey;
+        this.elytraKey = elytraKey;
     }
 
     public Block block() {
@@ -90,6 +92,15 @@ public class AaLauncher {
 
     public void owner(UUID uuid) {
         mutate(pdc -> pdc.set(ownerKey, PersistentDataType.STRING, uuid.toString()));
+    }
+
+    public boolean elytraDefenceEnabled() {
+        PersistentDataContainer pdc = container();
+        return pdc != null && pdc.getOrDefault(elytraKey, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
+    }
+
+    public void elytraDefenceEnabled(boolean enabled) {
+        mutate(pdc -> pdc.set(elytraKey, PersistentDataType.BYTE, enabled ? (byte) 1 : (byte) 0));
     }
 
     public UUID displayId() {

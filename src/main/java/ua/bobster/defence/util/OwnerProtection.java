@@ -36,4 +36,16 @@ public final class OwnerProtection {
         }
         return false;
     }
+
+    public static boolean mayUse(BobsterDefence plugin, Player player, UUID owner, String message) {
+        if (owner == null || owner.equals(player.getUniqueId()) || player.hasPermission("bobsterdefence.admin.use")) {
+            return true;
+        }
+        String ownerName = String.valueOf(plugin.getServer().getOfflinePlayer(owner).getName());
+        String raw = plugin.message(message);
+        if (!raw.isEmpty()) {
+            player.sendMessage(MessageUtil.parse(plugin.prefix() + raw, Map.of("owner", ownerName)));
+        }
+        return false;
+    }
 }
