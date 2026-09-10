@@ -18,7 +18,6 @@ import org.bukkit.scheduler.BukkitTask;
 import ua.bobster.defence.BobsterDefence;
 import ua.bobster.defence.combat.CombatPrincipal;
 import ua.bobster.defence.missile.MissilePayload;
-import ua.bobster.defence.strategicstates.combat.StrategicWeaponType;
 import org.bukkit.persistence.PersistentDataContainer;
 import ua.bobster.defence.util.DisplayUtil;
 import ua.bobster.defence.util.MessageUtil;
@@ -895,7 +894,6 @@ public class BallisticManager {
             }
             double power = airburst ? projectile.tier().airburstPower() : projectile.tier().explosionPower() * projectile.powerMultiplier();
             if (projectile.payload().kind() == MissilePayload.Kind.EXPLOSIVE && power > 0) {
-                recordStrategicImpact(location, projectile.owner(), power);
                 world.createExplosion(projectile.hitbox(), location, (float) power, airburst ? interceptionFire : explosionFire, airburst ? interceptionBreakBlocks : explosionBreakBlocks);
             } else if (projectile.payload().kind() == MissilePayload.Kind.POTION && power > 0) {
                 plugin.payloads().applyPotion(projectile.payload(), location, power);
@@ -914,12 +912,6 @@ public class BallisticManager {
             sendMessage(shooter, airburst ? "ballistic-intercepted-shooter" : "ballistic-impact", Map.of(
                     "x", location.getBlockX(),
                     "z", location.getBlockZ()));
-        }
-    }
-
-    private void recordStrategicImpact(Location location, CombatPrincipal shooter, double power) {
-        if (plugin.strategicStates() != null) {
-            plugin.strategicStates().recordImpact(location, shooter, StrategicWeaponType.BALLISTIC, power);
         }
     }
 

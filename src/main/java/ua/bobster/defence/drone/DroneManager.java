@@ -21,7 +21,6 @@ import org.joml.AxisAngle4f;
 import org.joml.Vector3f;
 import ua.bobster.defence.BobsterDefence;
 import ua.bobster.defence.combat.CombatPrincipal;
-import ua.bobster.defence.strategicstates.combat.StrategicWeaponType;
 import ua.bobster.defence.util.MessageUtil;
 
 import java.util.ArrayList;
@@ -422,9 +421,6 @@ public class DroneManager {
             return;
         }
         double power = shotDown ? interceptExplosionPower : type == null ? 0.0D : type.explosionPower();
-        if (power > 0.0D && plugin.strategicStates() != null) {
-            plugin.strategicStates().recordImpact(location, operator, StrategicWeaponType.DRONE, power);
-        }
         // Джерело вказуємо навмисно: тоді летить EntityExplodeEvent і ChestProtectionListener
         // встигає витягти скрині зі списку зруйнованих блоків.
         world.createExplosion(source, location, (float) power,

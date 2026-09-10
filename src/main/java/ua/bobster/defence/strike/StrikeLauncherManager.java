@@ -31,7 +31,6 @@ import ua.bobster.defence.combat.CombatPrincipal;
 import ua.bobster.defence.drone.AutonomousDroneMission;
 import ua.bobster.defence.drone.DroneType;
 import ua.bobster.defence.missile.MissilePayload;
-import ua.bobster.defence.strategicstates.combat.StrategicWeaponType;
 import ua.bobster.defence.util.MessageUtil;
 
 import java.util.ArrayList;
@@ -257,9 +256,6 @@ public class StrikeLauncherManager {
             releaseChunks();
             boolean spent = false;
             if (explode && location.getWorld() != null && payload.kind() == MissilePayload.Kind.EXPLOSIVE) {
-                if (plugin.strategicStates() != null) {
-                    plugin.strategicStates().recordImpact(location, CombatPrincipal.player(owner), StrategicWeaponType.BALLISTIC, type.explosionPower());
-                }
                 location.getWorld().createExplosion(hitbox, location, (float) type.explosionPower(), false, true);
                 location.getWorld().playSound(location, Sound.ENTITY_GENERIC_EXPLODE, 8.0f, intercepted ? 1.4f : 0.8f);
             } else if (explode && location.getWorld() != null && payload.kind() == MissilePayload.Kind.POTION) {

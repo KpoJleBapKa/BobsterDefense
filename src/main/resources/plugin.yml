@@ -15,8 +15,8 @@ commands:
     usage: /ppo <list|give|ammo>
     aliases: [airdefence]
   bobster:
-    description: Загальне керування BobsterDefence та Strategic States
-    usage: /bobster <stats|top|tech|states|reload>
+    description: Загальне керування BobsterDefence
+    usage: /bobster <stats|top|tech|reload>
     aliases: [bd]
   drone:
     description: FPV-дрони та універсальна дронова пускова
@@ -35,21 +35,6 @@ commands:
     aliases: [coa, side, союз]
 
 permissions:
-  bobsterdefence.states.admin:
-    description: Повне адміністрування Strategic States
-    default: op
-  bobsterdefence.states.create:
-    description: Видача та встановлення Strategic State Core
-    default: op
-  bobsterdefence.states.attacks:
-    description: Глобальне керування наступальними операціями
-    default: op
-  bobsterdefence.states.guildprotection:
-    description: Керування protected-власниками TerritoryMap
-    default: op
-  bobsterdefence.states.debug:
-    description: Перегляд діагностики Strategic States
-    default: op
   bobsterdefence.coalition.use:
     description: Створення коаліцій та керування ними
     default: true

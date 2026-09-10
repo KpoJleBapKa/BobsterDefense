@@ -27,9 +27,6 @@ import ua.bobster.defence.drone.DroneManager;
 import ua.bobster.defence.drone.DroneRecipe;
 import ua.bobster.defence.raid.AirRaidService;
 import ua.bobster.defence.stats.StatsManager;
-import ua.bobster.defence.strategicstates.StrategicStateListener;
-import ua.bobster.defence.strategicstates.StrategicStateManager;
-import ua.bobster.defence.strategicstates.policy.AttackPolicyManager;
 import ua.bobster.defence.strike.StrikeLauncherItem;
 import ua.bobster.defence.strike.StrikeLauncherListener;
 import ua.bobster.defence.strike.StrikeLauncherManager;
@@ -38,12 +35,14 @@ import ua.bobster.defence.missile.MissilePayloadListener;
 import ua.bobster.defence.missile.MissilePayloadManager;
 import ua.bobster.defence.technology.TechnologyListener;
 import ua.bobster.defence.technology.TechnologyManager;
+import ua.bobster.defence.util.StrategicStateCleanupListener;
 
 import java.io.IOException;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -80,8 +79,6 @@ public class BobsterDefence extends JavaPlugin {
     private AirRaidService airRaidService;
     private CombatIdentity combatIdentity;
     private AllegianceService allegianceService;
-    private StrategicStateManager strategicStateManager;
-    private AttackPolicyManager attackPolicyManager;
     private TechnologyManager technologyManager;
     private StrikeLauncherItem strikeLauncherItem;
     private StrikeLauncherManager strikeLauncherManager;
@@ -99,6 +96,7 @@ public class BobsterDefence extends JavaPlugin {
         saveDefaultConfig();
         applyBundledDefaults();
         migrateVersionThreeBalance();
+        clearStrategicStateData();
 
         statsManager = new StatsManager(this);
         if (getConfig().getBoolean("stats.enabled", true)) {
@@ -140,10 +138,6 @@ public class BobsterDefence extends JavaPlugin {
 
         technologyManager = new TechnologyManager(this);
 
-        strategicStateManager = new StrategicStateManager(this);
-        strategicStateManager.start();
-        attackPolicyManager = new AttackPolicyManager(strategicStateManager);
-
         chestProtectionListener = new ChestProtectionListener(this);
         airDefenceListener = new AirDefenceListener(this);
         getServer().getPluginManager().registerEvents(chestProtectionListener, this);
@@ -156,7 +150,7 @@ public class BobsterDefence extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new MissilePayloadListener(this), this);
         getServer().getPluginManager().registerEvents(new AaListener(this, aaManager, aaItem), this);
         getServer().getPluginManager().registerEvents(new TechnologyListener(this, technologyManager), this);
-        getServer().getPluginManager().registerEvents(new StrategicStateListener(this, strategicStateManager), this);
+        getServer().getPluginManager().registerEvents(new StrategicStateCleanupListener(this), this);
 
         PpoCommand rootCommand = new PpoCommand(this);
         registerCommand("ppo", rootCommand);
@@ -179,9 +173,6 @@ public class BobsterDefence extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (strategicStateManager != null) {
-            strategicStateManager.shutdown();
-        }
         if (airRaidService != null) {
             airRaidService.shutdown();
         }
@@ -248,7 +239,6 @@ public class BobsterDefence extends JavaPlugin {
         strikeLauncherRecipe.register();
         airRaidService.reload();
         teamRegistry.reload();
-        strategicStateManager.reload();
         aaManager.shutdown();
         aaManager.reload();
         aaManager.start();
@@ -272,11 +262,7 @@ public class BobsterDefence extends JavaPlugin {
                 ? "ENABLED (" + airRaidService.territories().all().size() + " територій)"
                 : airRaidService.territories().available() ? "DISABLED" : "територій не знайдено"));
         getLogger().info("Stats: " + state("stats.enabled"));
-        String strategicState = "DISABLED";
-        if (strategicStateManager.available()) {
-            strategicState = "ENABLED (" + strategicStateManager.all().size() + ")";
-        }
-        getLogger().info("Strategic States: " + strategicState);
+        getLogger().info("Strategic States: REMOVED");
     }
 
     private String state(String path) {
@@ -335,16 +321,30 @@ public class BobsterDefence extends JavaPlugin {
         return allegianceService;
     }
 
-    public StrategicStateManager strategicStates() {
-        return strategicStateManager;
-    }
-
-    public AttackPolicyManager attackPolicy() {
-        return attackPolicyManager;
-    }
-
     public TechnologyManager technologies() {
         return technologyManager;
+    }
+
+    private void clearStrategicStateData() {
+        File statesDirectory = new File(getDataFolder(), "states");
+        File logsDirectory = new File(getDataFolder(), "logs");
+        File[] files = {
+                new File(statesDirectory, "states.db"),
+                new File(statesDirectory, "states.db-wal"),
+                new File(statesDirectory, "states.db-shm"),
+                new File(logsDirectory, "states.log")
+        };
+        try {
+            for (File file : files) {
+                Files.deleteIfExists(file.toPath());
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException("Не вдалося очистити дані Strategic States", ex);
+        }
+        NamespacedKey citizenKey = new NamespacedKey(this, "state_citizen");
+        getServer().getWorlds().forEach(world -> world.getEntities().stream()
+                .filter(entity -> entity.getPersistentDataContainer().has(citizenKey))
+                .forEach(org.bukkit.entity.Entity::remove));
     }
 
     /**

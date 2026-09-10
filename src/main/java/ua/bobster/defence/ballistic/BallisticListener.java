@@ -130,7 +130,8 @@ public class BallisticListener implements Listener {
             if (launcher == null || launcher.owner() == null) {
                 continue;
             }
-            if (plugin.strategicStates() != null && plugin.strategicStates().byId(launcher.owner()) != null) {
+            org.bukkit.OfflinePlayer owner = plugin.getServer().getOfflinePlayer(launcher.owner());
+            if (!owner.hasPlayedBefore() && !owner.isOnline()) {
                 continue;
             }
             manager.registerMigratedLauncher(state.getBlock(), launcher.owner());

@@ -13,12 +13,10 @@ import org.bukkit.inventory.ItemStack;
 import ua.bobster.defence.BobsterDefence;
 import ua.bobster.defence.aa.AaTier;
 import ua.bobster.defence.stats.StatsManager;
-import ua.bobster.defence.strategicstates.StrategicStateCommand;
 import ua.bobster.defence.technology.TechnologyManager;
 import ua.bobster.defence.util.MessageUtil;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -28,11 +26,9 @@ public class PpoCommand implements CommandExecutor, TabCompleter {
     private static final String[] MEDALS = {"🥇", "🥈", "🥉"};
 
     private final BobsterDefence plugin;
-    private final StrategicStateCommand stateCommand;
 
     public PpoCommand(BobsterDefence plugin) {
         this.plugin = plugin;
-        this.stateCommand = new StrategicStateCommand(plugin, plugin.strategicStates());
     }
 
     @Override
@@ -46,7 +42,6 @@ public class PpoCommand implements CommandExecutor, TabCompleter {
                 case "top" -> handleTop(sender);
                 case "tech", "technology" -> handleTechnology(sender, args);
                 case "reload" -> handleReload(sender);
-                case "states" -> stateCommand.execute(sender, Arrays.copyOfRange(args, 1, args.length));
                 default -> send(sender, plugin.message("bobster-usage"));
             }
         } else {
@@ -323,16 +318,13 @@ public class PpoCommand implements CommandExecutor, TabCompleter {
         List<String> result = new ArrayList<>();
         boolean bobster = command.getName().equalsIgnoreCase("bobster");
         if (args.length == 1) {
-            List<String> options = bobster ? List.of("stats", "top", "tech", "states", "reload") : List.of("list", "give", "ammo");
+            List<String> options = bobster ? List.of("stats", "top", "tech", "reload") : List.of("list", "give", "ammo");
             for (String option : options) {
                 if (option.startsWith(args[0].toLowerCase(Locale.ROOT))) {
                     result.add(option);
                 }
             }
             return result;
-        }
-        if (bobster && args.length >= 2 && args[0].equalsIgnoreCase("states")) {
-            return stateCommand.tab(sender, Arrays.copyOfRange(args, 1, args.length));
         }
         if (bobster && (args[0].equalsIgnoreCase("tech") || args[0].equalsIgnoreCase("technology"))) {
             return technologyTab(args);

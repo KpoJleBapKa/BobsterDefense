@@ -103,7 +103,11 @@ public class StrikeLauncherListener implements Listener {
                 continue;
             }
             java.util.UUID owner = manager.owner(block);
-            if (owner == null || plugin.strategicStates() != null && plugin.strategicStates().byId(owner) != null) {
+            if (owner == null) {
+                continue;
+            }
+            org.bukkit.OfflinePlayer ownerProfile = plugin.getServer().getOfflinePlayer(owner);
+            if (!ownerProfile.hasPlayedBefore() && !ownerProfile.isOnline()) {
                 continue;
             }
             manager.registerMigratedDroneLauncher(block, owner);
